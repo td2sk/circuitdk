@@ -2,7 +2,7 @@
 name = "circuitdk-workspace"
 version = "0.1.0"
 description = "Development workspace for CircuitDK"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = ["circuitdk"]
 
 [tool.uv]
@@ -27,7 +27,7 @@ addopts = "-ra"
 markers = ["kicad: requires a local KiCad 10 installation"]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py311"
 line-length = 100
 src = ["packages/circuitdk/src", "packages/lossless-sexpr/src"]
 

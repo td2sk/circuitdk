@@ -13,7 +13,7 @@ uv tool install circuitdk
 circuitdk --version
 ```
 
-CircuitDK requires Python 3.13 or later and `kicad-cli` from KiCad 10. Set
+CircuitDK requires Python 3.11 or later and `kicad-cli` from KiCad 10. Set
 `CIRCUITDK_KICAD_CLI` if the executable is not in a standard location.
 
 ## Minimal example

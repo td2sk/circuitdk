@@ -72,7 +72,7 @@ CircuitDKは、論理設計についてはPythonを正としつつ、KiCad回路
 ## 必要な環境
 
 - KiCad 10
-- Python 3.13以降
+- Python 3.11以降
 - [uv](https://docs.astral.sh/uv/)
 - `kicad-cli`を実行できるplatform
 

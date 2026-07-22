@@ -73,7 +73,7 @@ keeping the KiCad schematic as a carefully arranged, human-readable engineering 
 ## Requirements
 
 - KiCad 10
-- Python 3.13 or later
+- Python 3.11 or later
 - [uv](https://docs.astral.sh/uv/)
 - a platform on which `kicad-cli` is available
 

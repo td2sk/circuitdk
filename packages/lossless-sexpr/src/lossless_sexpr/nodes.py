@@ -81,7 +81,7 @@ class ListNode:
             yield from child.walk(head)
 
 
-type Node = AtomNode | ListNode
+Node = AtomNode | ListNode
 
 
 @dataclass(frozen=True, slots=True)

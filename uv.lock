@@ -1,6 +1,6 @@
 version = 1
 revision = 3
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 
 [manifest]
 members = [
@@ -20,7 +20,7 @@ wheels = [
 
 [[package]]
 name = "circuitdk"
-version = "0.1.1"
+version = "0.1.2"
 source = { editable = "packages/circuitdk" }
 dependencies = [
     { name = "circuitdk-lossless-sexpr" },
@@ -35,7 +35,7 @@ requires-dist = [
 
 [[package]]
 name = "circuitdk-lossless-sexpr"
-version = "0.1.0"
+version = "0.1.1"
 source = { editable = "packages/lossless-sexpr" }
 
 [[package]]
