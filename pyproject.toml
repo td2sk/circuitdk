@@ -1,0 +1,39 @@
+[project]
+name = "circuitdk-workspace"
+version = "0.1.0"
+description = "Development workspace for CircuitDK"
+requires-python = ">=3.13"
+dependencies = ["circuitdk"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+circuitdk = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.0",
+    "ruff>=0.15.0",
+    "ty>=0.0.61",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "packages/lossless-sexpr/tests"]
+addopts = "-ra"
+markers = ["kicad: requires a local KiCad 10 installation"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["packages/circuitdk/src", "packages/lossless-sexpr/src"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ty.src]
+include = ["packages/circuitdk/src", "packages/lossless-sexpr/src", "tests"]
+exclude = ["src"]

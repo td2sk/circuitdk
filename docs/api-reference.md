@@ -1,0 +1,313 @@
+# Python API reference
+
+[English](api-reference.md) | [日本語](api-reference.ja.md)
+
+This is the compact reference for CircuitDK's alpha Python API. Import the types described here
+from `circuitdk` unless another module is shown.
+
+## Minimal structure
+
+A user module builds one `Circuit`, creates parts and nets under it, and exports one
+`KicadProject` for the CLI entrypoint:
+
+```python
+from circuitdk import Circuit, KicadProject, Part, V, kohm
+
+circuit = Circuit("Blinky")
+vdd = circuit.power("VDD", voltage=5 * V)
+gnd = circuit.ground("GND")
+
+power = Part(
+    circuit,
+    "PowerInput",
+    symbol="Connector_Generic:Conn_01x02",
+    pin_overrides={"VDD": "1", "GND": "2"},
+)
+resistor = Part(circuit, "LedResistor", symbol="Device:R", value=1 * kohm)
+led = Part(circuit, "Led", symbol="Device:LED")
+
+vdd.connect(power.pin("VDD"), resistor.pin("1"))
+circuit.connect(resistor.pin("2"), led.pin("A"))
+gnd.connect(led.pin("K"), power.pin("GND"))
+
+project = KicadProject(circuit, "hardware/blinky.kicad_sch")
+```
+
+Point `circuitdk.toml` at the module-level `project` object:
+
+```toml
+[project]
+entrypoint = "circuit:project"
+state_directory = ".circuitdk"
+```
+
+The usual workflow is `circuitdk diff`, `circuitdk deploy`, manual arrangement and wiring in
+KiCad, then `circuitdk test`.
+
+## Identity and ownership
+
+Every object receives a stable path from its scope and construct ID:
+
+```python
+circuit = Circuit("Board")
+led = Part(circuit, "StatusLed", symbol="Device:LED")
+
+assert led.path == "/Board/StatusLed"
+```
+
+Use these paths as CircuitDK IDs. Do not use mutable KiCad references such as `R1` as logical IDs.
+Python owns managed part existence and fields; KiCad owns placement, rotation, wires, labels, and
+presentation.
+
+## Core types
+
+### `Construct`
+
+Base class for objects in the construct tree.
+
+| Member | Meaning |
+| --- | --- |
+| `scope` | Parent construct, or `None` for the root circuit. |
+| `construct_id` | ID unique within the parent scope. It cannot contain `/`. |
+| `path` | Stable absolute logical ID derived from the construct tree. |
+| `circuit` | Root `Circuit` containing the construct. |
+
+Application-specific reusable circuits can subclass `Construct` and create child parts, nets, or
+other constructs in `__init__`.
+
+### `Circuit`
+
+```python
+Circuit(construct_id: str)
+```
+
+The root construct and mutable circuit builder.
+
+| Method | Purpose |
+| --- | --- |
+| `net(id)` | Create a named signal `Net`. |
+| `power(id, voltage=None)` | Create a named power `Net`. |
+| `ground(id="GND")` | Create a ground `Net`. |
+| `connect(*pins)` | Connect at least two pins through an anonymous net. |
+| `no_connect(pin)` | Mark a pin as intentionally unused. Prefer `pin.no_connect()`. |
+| `add_intent(kind, subject, **parameters)` | Add a custom semantic intent for validation. |
+| `synth()` | Produce immutable `CircuitIR`. Normally the CLI calls this through `KicadProject`. |
+
+Keep the returned `Part` and `Net` objects in normal Python variables; there is no public global
+`Parts` collection in the alpha API.
+
+### `Part`
+
+```python
+Part(
+    scope,
+    construct_id,
+    *,
+    symbol,
+    pins=None,
+    pin_overrides=None,
+    value=None,
+    footprint=None,
+    in_bom=True,
+    on_board=True,
+    dnp=False,
+)
+```
+
+| Argument or attribute | Meaning |
+| --- | --- |
+| `symbol` | KiCad library ID such as `Device:R`. Required. |
+| `value` | Display value. Defaults to the symbol name. Accepts `str` or `Quantity`. |
+| `footprint` | KiCad footprint library ID, or `None`. May be assigned later from BOM data. |
+| `in_bom` | Whether the symbol participates in the BOM. |
+| `on_board` | Whether the symbol participates in PCB transfer. |
+| `dnp` | Do-not-populate state. |
+| `pin(name_or_number)` | Return a `Pin` by resolved name, alias, or number. |
+
+By default, CircuitDK resolves all pins from the selected KiCad symbol library. Use
+`pin_overrides` only for convenient aliases that differ from the library:
+
+```python
+mcu = Part(
+    circuit,
+    "Mcu",
+    symbol="MCU_Microchip_ATtiny:ATtiny85-20P",
+    pin_overrides={"PB0": "5"},  # KiCad calls this pin AREF/PB0.
+)
+```
+
+Use `pins={"name": "number"}` for generated or unavailable libraries. Supplying `pins` defines
+the complete pin set and disables KiCad library pin resolution. `pins` and `pin_overrides` cannot
+be used together.
+
+### `Pin`
+
+| Member | Meaning |
+| --- | --- |
+| `part` | Owning `Part`. |
+| `name` | Resolved name or code-facing alias. |
+| `number` | Physical symbol pin number. |
+| `ref` | Immutable `PinRef` used by Circuit IR. |
+| `no_connect()` | Mark the pin as intentionally unused and return the pin. |
+
+Every resolved pin should be connected or explicitly marked no-connect before strict testing.
+
+### `Net`
+
+| Member | Meaning |
+| --- | --- |
+| `kind` | `signal`, `power`, or `ground`. |
+| `voltage` | String-normalized voltage for power nets, otherwise `None`. |
+| `connect(*pins)` | Add pins to the net and return the same `Net`. |
+
+Calling `connect()` again extends the same logical net:
+
+```python
+vdd.connect(controller.pin("VCC"))
+vdd.connect(sensor.pin("VDD"), capacitor.pin1)
+```
+
+## Reusable parts and circuit intent
+
+### `Resistor` and `Capacitor`
+
+```python
+Resistor(scope, id, *, resistance, footprint=None)
+Capacitor(scope, id, *, capacitance, footprint=None)
+```
+
+Both expose `pin1` and `pin2` properties and set the appropriate `Device:R` or `Device:C` symbol.
+
+### Pull resistors
+
+```python
+pull_down(scope, id, *, signal, ground, resistance, footprint=None)
+pull_up(scope, id, *, signal, power, resistance, footprint=None)
+```
+
+These return the created `Resistor`, connect it, and record a default-logic-level intent.
+
+### `DecouplingCapacitor`
+
+```python
+DecouplingCapacitor(
+    scope,
+    id,
+    *,
+    power_pin,
+    ground,
+    capacitance,
+    footprint=None,
+)
+```
+
+Creates and exposes `.capacitor`, connects it from the power pin to ground, and records a
+decoupling intent.
+
+### `LedIndicator`
+
+```python
+LedIndicator(
+    scope,
+    id,
+    *,
+    drive,
+    return_to,
+    series_resistance,
+    led_footprint=None,
+    resistor_footprint=None,
+)
+```
+
+Creates `.resistor` and `.led`, connects them in series, and records a current-limiting intent.
+
+### `VoltageDivider`
+
+```python
+VoltageDivider(
+    scope,
+    id,
+    *,
+    input_net,
+    return_to,
+    upper_resistance,
+    lower_resistance,
+    footprint=None,
+)
+```
+
+Exposes `.upper`, `.lower`, and the divider output `.output` net.
+
+### `Interface` and `SpiInterface`
+
+`Interface(scope, id, *, pins={role: pin})` groups related pins by role. Use `.pin(role)` to
+retrieve one and `.connect(other, roles=None)` to connect matching roles or an explicit role map.
+
+`SpiInterface` is a typed convenience interface with `sck`, `mosi`, `miso`, and `chip_select`
+roles.
+
+## Values and units
+
+Available units are `ohm`, `kohm`, `F`, `uF`, `nF`, and `V`:
+
+```python
+resistance = 10 * kohm
+capacitance = 100 * nF
+supply = 3.3 * V
+```
+
+The result is an immutable `Quantity`. CircuitDK normalizes it to a readable KiCad value such as
+`10 kΩ` or `100 nF`.
+
+## `KicadProject`
+
+```python
+KicadProject(
+    circuit,
+    schematic,
+    *,
+    state_directory=".circuitdk",
+    moved=None,
+    validate_with_kicad=True,
+)
+```
+
+`symbol_resolver`, `footprint_resolver`, and `kicad_cli` can also be injected for advanced use or
+tests. Normal user code should rely on automatic discovery.
+
+| Member | Purpose |
+| --- | --- |
+| `circuit` | Desired `Circuit`. |
+| `schematic` | Target `.kicad_sch` as a `Path`. |
+| `state_directory` | Directory for last-applied state and library lock data. |
+| `moved` | Mapping of old logical IDs to new IDs. |
+| `state_path` | Managed-state JSON path. |
+| `lock_path` | Library lock JSON path. |
+| `synth()` | Resolve libraries and return desired `CircuitIR`. |
+| `plan()` | Compare desired state with the schematic. |
+| `drift()` | Report managed KiCad-side changes since the previous deploy. |
+| `deploy(backup=True)` | Apply managed changes atomically. |
+| `run_tests()` | Run conformance, intent, pin, library, and ERC checks. |
+| `inspect()` | Return desired, actual, plan, drift, and library data as a dictionary. |
+| `library_lock()` | Resolve library hashes and report lock issues. |
+| `adopt(reference, circuit_id)` | Attach a logical ID to an existing KiCad symbol. |
+| `move(old_id, new_id)` | Rename a managed logical ID in the schematic. |
+
+Prefer CLI commands for normal workflows because they provide stable output and exit-code
+semantics. Direct methods are useful for tests and custom automation.
+
+## Validation helpers
+
+`validate_pin_coverage(circuit_ir)` checks that every resolved pin is connected or explicitly
+no-connect. `validate_intents(circuit_ir)` checks the semantic intents created by reusable
+constructs. Their result objects expose `.issues` and the boolean `.ok` property. Normal users can
+rely on `circuitdk test`, which runs these checks together with actual-schematic and ERC checks.
+
+## Circuit IR
+
+`CircuitIR`, `PartIR`, `NetIR`, `PinRef`, and `IntentIR` are immutable synthesized views. They are
+useful for custom analysis and tests, but are not builders. Construct the design with `Circuit`,
+`Part`, `Net`, and reusable constructs, then call `project.synth()`.
+
+The alpha API may still evolve. Public names re-exported from `circuitdk` are the supported user
+surface; modules under `circuitdk.targets` are advanced backend APIs.

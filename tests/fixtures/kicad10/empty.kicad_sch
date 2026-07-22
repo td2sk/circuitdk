@@ -1,0 +1,13 @@
+(kicad_sch
+  (version 20250114)
+  (generator "circuitdk")
+  (generator_version "0.1.0")
+  (uuid 00000000-0000-4000-8000-000000000001)
+  (paper "A4")
+  (lib_symbols)
+  (sheet_instances
+    (path "/"
+      (page "1")
+    )
+  )
+)

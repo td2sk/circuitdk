@@ -1,0 +1,4 @@
+[project]
+entrypoint = "circuit:project"
+state_directory = ".circuitdk"
+

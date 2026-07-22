@@ -1,0 +1,30 @@
+[project]
+name = "circuitdk-lossless-sexpr"
+version = "0.1.0"
+description = "A lossless concrete syntax tree and text editing library for S-expressions"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.13"
+keywords = ["cst", "parser", "s-expression", "source-preserving"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/td2sk/circuitdk"
+Repository = "https://github.com/td2sk/circuitdk"
+Issues = "https://github.com/td2sk/circuitdk/issues"
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "lossless_sexpr"

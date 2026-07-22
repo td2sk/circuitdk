@@ -1,0 +1,51 @@
+from .cli_runner import (
+    ErcItem,
+    ErcResult,
+    ErcViolation,
+    KicadCli,
+    KicadCliError,
+    actual_circuit_from_xml,
+    parse_erc_json,
+)
+from .document import KicadProperty, KicadSchematic, KicadSymbol
+from .libraries import (
+    EmbeddedSymbolDefinition,
+    FootprintDefinition,
+    InMemorySymbolResolver,
+    KicadFootprintResolver,
+    KicadSymbolResolver,
+    LibraryResolutionError,
+    LibraryTable,
+    SymbolDefinition,
+    SymbolPinDefinition,
+    validate_symbol_footprint,
+)
+from .planner import Action, DeploymentPlan, FieldChange, NoConnectAction, plan_deployment
+
+__all__ = [
+    "Action",
+    "DeploymentPlan",
+    "EmbeddedSymbolDefinition",
+    "ErcItem",
+    "ErcResult",
+    "ErcViolation",
+    "FieldChange",
+    "FootprintDefinition",
+    "InMemorySymbolResolver",
+    "KicadCli",
+    "KicadCliError",
+    "KicadFootprintResolver",
+    "KicadProperty",
+    "KicadSchematic",
+    "KicadSymbol",
+    "KicadSymbolResolver",
+    "LibraryResolutionError",
+    "LibraryTable",
+    "NoConnectAction",
+    "SymbolDefinition",
+    "SymbolPinDefinition",
+    "actual_circuit_from_xml",
+    "parse_erc_json",
+    "plan_deployment",
+    "validate_symbol_footprint",
+]
