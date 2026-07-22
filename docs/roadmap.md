@@ -18,8 +18,8 @@ See the [README](../README.md#current-scope) for practical limitations.
 
 ## Authoring and reuse
 
-- a broader user-friendly high-level construct library for common circuit patterns, expanding on
-  pull resistors, decoupling, LED indicators, and voltage dividers
+- a broader user-friendly high-level circuit authoring API
+- richer high-level test assertions
 - typed part libraries and generated Python bindings
 - reusable part metadata for interfaces, electrical constraints, and valid default footprints
 - a multi-circuit workspace for projects such as split boards
