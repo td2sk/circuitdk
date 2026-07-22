@@ -8,6 +8,7 @@ from uuid import NAMESPACE_URL, uuid5
 from lossless_sexpr import TextEdit, quote
 
 from ...ir import CircuitIR, PartIR
+from ...units import format_schematic_value
 from .document import KicadSchematic, KicadSymbol
 from .libraries import (
     EmbeddedSymbolDefinition,
@@ -327,7 +328,7 @@ def _render_symbol_instance(
     pins = _render_pin_instances(pin_numbers, str(symbol_uuid))
     footprint = part.footprint or ""
     reference_property = _render_property("Reference", reference, x + 2.54, y)
-    value_property = _render_property("Value", part.value, x, y + 2.54)
+    value_property = _render_property("Value", format_schematic_value(part.value), x, y + 2.54)
     footprint_property = _render_property("Footprint", footprint, x, y, hidden=True)
     datasheet_property = _render_property("Datasheet", "~", x, y, hidden=True)
     description_property = _render_property("Description", "", x, y, hidden=True)
@@ -541,7 +542,7 @@ def _changes(desired: PartIR, actual: KicadSymbol) -> tuple[FieldChange, ...]:
     }
     expected: dict[str, object] = {
         "symbol": desired.symbol,
-        "value": desired.value,
+        "value": format_schematic_value(desired.value),
         "footprint": desired.footprint,
         "in_bom": desired.in_bom,
         "on_board": desired.on_board,

@@ -117,7 +117,7 @@ Part(
 | Argument or attribute | Meaning |
 | --- | --- |
 | `symbol` | KiCad library ID such as `Device:R`. Required. |
-| `value` | Display value. Defaults to the symbol name. Accepts `str` or `Quantity`. |
+| `value` | Code-owned value. Defaults to the symbol name. A `Quantity` remains numeric until the KiCad serialization boundary; an explicit `str` is preserved unchanged. |
 | `footprint` | KiCad footprint library ID, or `None`. May be assigned later from BOM data. |
 | `in_bom` | Whether the symbol participates in the BOM. |
 | `on_board` | Whether the symbol participates in PCB transfer. |
@@ -169,14 +169,17 @@ vdd.connect(sensor.pin("VDD"), capacitor.pin1)
 
 ## Reusable parts and circuit intent
 
-### `Resistor` and `Capacitor`
+### `Resistor`, `Capacitor`, and `Inductor`
 
 ```python
 Resistor(scope, id, *, resistance, footprint=None)
 Capacitor(scope, id, *, capacitance, footprint=None)
+Inductor(scope, id, *, inductance, footprint=None)
 ```
 
-Both expose `pin1` and `pin2` properties and set the appropriate `Device:R` or `Device:C` symbol.
+All three expose `pin1` and `pin2`. They retain their numeric value as `.resistance`,
+`.capacitance`, or `.inductance` and use the corresponding `Device:R`, `Device:C`, or `Device:L`
+symbol.
 
 ### Pull resistors
 
@@ -248,16 +251,29 @@ roles.
 
 ## Values and units
 
-Available units are `ohm`, `kohm`, `F`, `uF`, `nF`, and `V`:
+Available units are `ohm`, `kohm`, `Mohm`, `F`, `uF`, `nF`, `H`, `mH`, `uH`, `nH`, and `V`:
 
 ```python
 resistance = 10 * kohm
 capacitance = 100 * nF
+inductance = 2.2 * mH
 supply = 3.3 * V
 ```
 
-The result is an immutable `Quantity`. CircuitDK normalizes it to a readable KiCad value such as
-`10 kΩ` or `100 nF`.
+The result is an immutable, Decimal-based `Quantity`. It remains numeric in `Part` and `CircuitIR`,
+supports equality by physical value, and can be converted for assertions:
+
+```python
+from decimal import Decimal
+
+assert resistance.in_unit(ohm) == Decimal("10000")
+assert resistance == 10000 * ohm
+```
+
+At the KiCad boundary, CircuitDK uses conventional compact passive notation. Examples include
+`470R`, `4R7`, `3k3`, `100n`, `4u7`, and `2m2`. The unit selected in Python is retained, so
+`0.3 * uF` becomes `0.3u`, while `300 * nF` becomes `300n`. Explicit string values are not
+rewritten.
 
 ## `KicadProject`
 

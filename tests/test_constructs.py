@@ -7,6 +7,7 @@ from circuitdk import (
     DecouplingCapacitor,
     LedIndicator,
     Part,
+    Quantity,
     SpiInterface,
     V,
     VoltageDivider,
@@ -45,7 +46,11 @@ def test_synthesizes_deterministic_parts_and_net_partitions() -> None:
     assert first == second
     assert [part.id for part in first.parts] == ["/Blinky/Mcu", "/Blinky/Resistor"]
     assert len(first.nets) == 3
-    assert first.part("/Blinky/Resistor").value == "1 kΩ"
+    resistor_value = first.part("/Blinky/Resistor").value
+    assert isinstance(resistor_value, Quantity)
+    assert resistor_value == 1 * kohm
+    assert resistor_value.in_unit(kohm) == 1
+    assert first.to_dict()["parts"][1]["value"] == "1k"
 
 
 def test_connecting_two_named_nets_is_rejected() -> None:

@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from .units import Quantity, format_schematic_value
+
 
 @dataclass(frozen=True, slots=True, order=True)
 class PinRef:
@@ -19,7 +21,7 @@ class PinRef:
 class PartIR:
     id: str
     symbol: str
-    value: str
+    value: str | Quantity
     footprint: str | None
     pins: tuple[PinRef, ...]
     in_bom: bool = True
@@ -66,13 +68,16 @@ class CircuitIR:
         return next(part for part in self.parts if part.id == circuit_id)
 
     def to_dict(self) -> dict[str, Any]:
-        return asdict(self)
+        result = asdict(self)
+        for part, serialized in zip(self.parts, result["parts"], strict=True):
+            serialized["value"] = format_schematic_value(part.value)
+        return result
 
     def managed_projection(self) -> dict[str, dict[str, object]]:
         return {
             part.id: {
                 "symbol": part.symbol,
-                "value": part.value,
+                "value": format_schematic_value(part.value),
                 "footprint": part.footprint,
                 "in_bom": part.in_bom,
                 "on_board": part.on_board,

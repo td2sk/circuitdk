@@ -143,7 +143,7 @@ def test_diff_uses_distinct_colors_and_summary(monkeypatch: pytest.MonkeyPatch) 
             Action(
                 "update",
                 "/Blinky/Changed",
-                (FieldChange("value", "10 kΩ", "1 kΩ"),),
+                (FieldChange("value", "10k", "1k"),),
             ),
             Action("delete", "/Blinky/Old"),
         )

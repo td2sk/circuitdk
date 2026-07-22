@@ -56,7 +56,7 @@ def test_deploy_updates_only_value_and_writes_state_and_backup(
     updated = schematic_path.read_text(encoding="utf-8")
     assert result.complete
     assert result.applied_updates == 1
-    assert updated == schematic_source.replace('"10 k"', '"47 kΩ"')
+    assert updated == schematic_source.replace('"10 k"', '"47k"')
     assert (
         schematic_path.with_suffix(".kicad_sch.bak").read_text(encoding="utf-8") == schematic_source
     )

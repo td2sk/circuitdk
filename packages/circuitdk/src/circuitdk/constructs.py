@@ -71,7 +71,7 @@ class Part(Construct):
         if pins is not None and pin_overrides is not None:
             raise ValueError("pins and pin_overrides cannot be used together")
         self.symbol = symbol
-        self.value = str(value) if value is not None else symbol.rsplit(":", 1)[-1]
+        self.value = value if value is not None else symbol.rsplit(":", 1)[-1]
         self.footprint = footprint
         self.in_bom = in_bom
         self.on_board = on_board

@@ -117,7 +117,7 @@ Part(
 | Argument・属性 | 意味 |
 | --- | --- |
 | `symbol` | `Device:R`などのKiCad library ID。必須。 |
-| `value` | 表示値。省略時はsymbol名。`str`または`Quantity`を指定可能。 |
+| `value` | コード管理の値。省略時はsymbol名。`Quantity`はKiCadへのserialization境界まで数値として保持し、明示した`str`は変更しない。 |
 | `footprint` | KiCad footprint library IDまたは`None`。BOM dataから後で代入可能。 |
 | `in_bom` | BOMへ含めるか。 |
 | `on_board` | PCB transferの対象にするか。 |
@@ -170,15 +170,16 @@ vdd.connect(sensor.pin("VDD"), capacitor.pin1)
 
 ## 再利用可能な部品と回路intent
 
-### `Resistor`と`Capacitor`
+### `Resistor`、`Capacitor`、`Inductor`
 
 ```python
 Resistor(scope, id, *, resistance, footprint=None)
 Capacitor(scope, id, *, capacitance, footprint=None)
+Inductor(scope, id, *, inductance, footprint=None)
 ```
 
-どちらも`pin1`と`pin2` propertyを公開し、対応する`Device:R`または`Device:C` symbolを設定
-します。
+いずれも`pin1`と`pin2`を公開します。数値を`.resistance`、`.capacitance`、
+`.inductance`として保持し、対応する`Device:R`、`Device:C`、`Device:L` symbolを設定します。
 
 ### Pull resistor
 
@@ -250,16 +251,28 @@ interfaceです。
 
 ## 値と単位
 
-`ohm`、`kohm`、`F`、`uF`、`nF`、`V`を使用できます。
+`ohm`、`kohm`、`Mohm`、`F`、`uF`、`nF`、`H`、`mH`、`uH`、`nH`、`V`を使用できます。
 
 ```python
 resistance = 10 * kohm
 capacitance = 100 * nF
+inductance = 2.2 * mH
 supply = 3.3 * V
 ```
 
-結果はimmutableな`Quantity`です。CircuitDKは`10 kΩ`、`100 nF`のような読みやすいKiCad値へ
-正規化します。
+結果はimmutableかつDecimalベースの`Quantity`です。`Part`と`CircuitIR`では数値として
+保持され、物理量による等価比較とtest向けの単位変換ができます。
+
+```python
+from decimal import Decimal
+
+assert resistance.in_unit(ohm) == Decimal("10000")
+assert resistance == 10000 * ohm
+```
+
+KiCadへ書き込む境界では、一般的な受動部品の短縮表記へ変換します。たとえば`470R`、
+`4R7`、`3k3`、`100n`、`4u7`、`2m2`です。Pythonで選択した単位を維持するため、
+`0.3 * uF`は`0.3u`、`300 * nF`は`300n`になります。明示した文字列値は変更しません。
 
 ## `KicadProject`
 
