@@ -16,14 +16,14 @@ To install from a source checkout instead, change to its root and install the CL
 
 ```console
 cd circuitdk
-uv tool install ./packages/circuitdk
+uv tool install .
 circuitdk --version
 ```
 
 This is a non-editable installation. After pulling a newer version, reinstall it:
 
 ```console
-uv tool install --reinstall ./packages/circuitdk
+uv tool install --reinstall .
 ```
 
 Development environment setup belongs in the [development guide](development.md).

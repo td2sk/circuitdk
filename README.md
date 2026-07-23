@@ -1,6 +1,7 @@
 # CircuitDK
 
-[English](README.md) | [日本語](README.ja.md)
+[English](https://github.com/td2sk/circuitdk/blob/main/README.md) |
+[日本語](https://github.com/td2sk/circuitdk/blob/main/README.ja.md)
 
 CircuitDK lets you define circuit logic and intent in Python while continuing to edit and arrange
 the schematic in KiCad. Python owns parts, selected properties, and intended connectivity; KiCad
@@ -14,7 +15,7 @@ circuitdk deploy
 circuitdk test
 ```
 
-![CircuitDK diff, deploy, and test workflow](docs/usage.png)
+![CircuitDK diff, deploy, and test workflow](https://raw.githubusercontent.com/td2sk/circuitdk/main/docs/usage.png)
 
 > [!NOTE]
 > CircuitDK is currently an experimental tool for KiCad 10 projects. See
@@ -100,12 +101,12 @@ To use a source checkout, change to its root and install the CLI package directl
 
 ```console
 cd circuitdk
-uv tool install ./packages/circuitdk
+uv tool install .
 circuitdk --version
 ```
 
 This installs a standalone, non-editable command from the checked-out source. Re-run
-`uv tool install --reinstall ./packages/circuitdk` after pulling a newer version.
+`uv tool install --reinstall .` after pulling a newer version.
 
 ## Quick start
 
@@ -390,10 +391,10 @@ project = KicadProject(
 
 ## Documentation
 
-- [Getting started](docs/getting-started.md) provides a more detailed tutorial and command usage.
-- [Python API reference](docs/api-reference.md) summarizes the public classes, methods, attributes,
+- [Getting started](https://github.com/td2sk/circuitdk/blob/main/docs/getting-started.md) provides a more detailed tutorial and command usage.
+- [Python API reference](https://github.com/td2sk/circuitdk/blob/main/docs/api-reference.md) summarizes the public classes, methods, attributes,
   reusable constructs, and units.
-- [CLI reference](docs/cli.md) documents commands, exit codes, deploy status, and JSON output.
-- [Architecture](docs/architecture.md) explains reconciliation, ownership, state, and safety.
-- [Roadmap](docs/roadmap.md) describes the supported release scope and future work.
-- [Development](docs/development.md) describes contributor setup and verification.
+- [CLI reference](https://github.com/td2sk/circuitdk/blob/main/docs/cli.md) documents commands, exit codes, deploy status, and JSON output.
+- [Architecture](https://github.com/td2sk/circuitdk/blob/main/docs/architecture.md) explains reconciliation, ownership, state, and safety.
+- [Roadmap](https://github.com/td2sk/circuitdk/blob/main/docs/roadmap.md) describes the supported release scope and future work.
+- [Development](https://github.com/td2sk/circuitdk/blob/main/docs/development.md) describes contributor setup and verification.

@@ -12,7 +12,7 @@ uv sync
 An optional editable CLI installation keeps the global command connected to the checkout:
 
 ```console
-uv tool install --editable ./packages/circuitdk
+uv tool install --editable .
 ```
 
 Run all local gates from the repository root:

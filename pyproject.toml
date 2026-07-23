@@ -1,18 +1,44 @@
 [project]
-name = "circuitdk-workspace"
-version = "0.1.0"
-description = "Development workspace for CircuitDK"
+name = "circuitdk"
+version = "0.1.2"
+description = "Code-first circuit design and KiCad reconciliation toolkit"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
-dependencies = ["circuitdk"]
+keywords = ["circuit", "eda", "kicad", "schematic"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Electronic Design Automation (EDA)",
+]
+dependencies = [
+    "circuitdk-lossless-sexpr>=0.1.1,<0.2.0",
+    "typer>=0.16.0",
+]
 
-[tool.uv]
-package = false
+[project.urls]
+Homepage = "https://github.com/td2sk/circuitdk"
+Repository = "https://github.com/td2sk/circuitdk"
+Documentation = "https://github.com/td2sk/circuitdk/tree/main/docs"
+Issues = "https://github.com/td2sk/circuitdk/issues"
+
+[project.scripts]
+circuit = "circuitdk.cli:app"
+circuitdk = "circuitdk.cli:app"
 
 [tool.uv.workspace]
-members = ["packages/*"]
+members = ["packages/lossless-sexpr"]
 
 [tool.uv.sources]
-circuitdk = { workspace = true }
+circuitdk-lossless-sexpr = { workspace = true }
 
 [dependency-groups]
 dev = [
@@ -29,11 +55,14 @@ markers = ["kicad: requires a local KiCad 10 installation"]
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-src = ["packages/circuitdk/src", "packages/lossless-sexpr/src"]
+src = ["src", "packages/lossless-sexpr/src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
 
 [tool.ty.src]
-include = ["packages/circuitdk/src", "packages/lossless-sexpr/src", "tests"]
-exclude = ["src"]
+include = ["src", "packages/lossless-sexpr/src", "tests"]
+
+[build-system]
+requires = ["uv_build>=0.11.7,<0.12.0"]
+build-backend = "uv_build"
