@@ -182,3 +182,33 @@ voltage dividers, and interfaces. These constructs add ordinary parts and connec
 with intent records checked by `circuitdk test`.
 
 See [Testing circuit intent](../README.md#testing-circuit-intent) for examples.
+
+## Protocol-aware connections
+
+`SPI`, `I2C`, and `UART` keep pin selection explicit while checking well-known pin names for clear
+role conflicts:
+
+```python
+from circuitdk.protocols import SPI
+
+spi = SPI(
+    circuit,
+    "SensorBus",
+    controller=controller,
+    sck="SPI_SCK",
+    mosi="SPI_MOSI",
+    miso="SPI_MISO",
+)
+spi.add_peripheral(
+    device=sensor,
+    sck="SCLK",
+    sdi="SDI",
+    sdo="SDO",
+    controller_cs="SENSOR_CS",
+    device_cs="NCS",
+)
+```
+
+Names such as `GPIO2` that do not carry reliable protocol meaning are accepted without a warning.
+See the [API reference](api-reference.md#protocol-connections) for aliases, one-way links, and
+reasoned overrides.

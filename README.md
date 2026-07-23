@@ -67,6 +67,7 @@ keeping the KiCad schematic as a carefully arranged, human-readable engineering 
 - Compare intended connectivity with a netlist exported by KiCad itself.
 - Run KiCad ERC and distinguish successful deployment from pending manual wiring.
 - Mark intentionally unused pins with `no_connect()`.
+- Declare SPI, I²C, and UART connections with role-aware pin checks.
 - Reuse patterns such as pull-ups, pull-downs, LED indicators, voltage dividers, and decoupling.
 - Adopt symbols from an existing schematic and rename logical IDs without replacing them.
 - Record resolved symbol and footprint library sources in a lock file.
@@ -359,6 +360,29 @@ shorts, current-limiting resistance, decoupling, and explicit treatment of unuse
 
 ```python
 controller.pin("NC").no_connect()
+```
+
+Protocol constructs keep every pin choice explicit while warning about clear naming conflicts:
+
+```python
+from circuitdk.protocols import SPI
+
+spi = SPI(
+    circuit,
+    "SensorBus",
+    controller=controller,
+    sck="SPI_SCK",
+    mosi="SPI_MOSI",
+    miso="SPI_MISO",
+)
+spi.add_peripheral(
+    device=sensor,
+    sck="SCLK",
+    sdi="SDI",
+    sdo="SDO",
+    controller_cs="SENSOR_CS",
+    device_cs="NCS",
+)
 ```
 
 ## Working with existing schematics

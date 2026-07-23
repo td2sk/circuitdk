@@ -241,13 +241,81 @@ VoltageDivider(
 
 Exposes `.upper`, `.lower`, and the divider output `.output` net.
 
-### `Interface` and `SpiInterface`
+## Protocol connections
 
-`Interface(scope, id, *, pins={role: pin})` groups related pins by role. Use `.pin(role)` to
-retrieve one and `.connect(other, roles=None)` to connect matching roles or an explicit role map.
+Import stable protocol-aware APIs from `circuitdk.protocols`:
 
-`SpiInterface` is a typed convenience interface with `sck`, `mosi`, `miso`, and `chip_select`
-roles.
+```python
+from circuitdk.protocols import I2C, SPI, UART, pin_override
+```
+
+Protocol pin selectors accept a `Pin`, a pin name string relative to the declared endpoint owner,
+or an integer pin number relative to that owner. CircuitDK never selects an unspecified pin.
+
+### `SPI`
+
+```python
+spi = SPI(
+    scope,
+    id,
+    controller=controller,
+    sck="SPI_SCK",
+    mosi="SPI_MOSI",
+    miso="SPI_MISO",
+)
+spi.add_peripheral(
+    device=sensor,
+    sck="SCLK",
+    sdi="SDI",
+    sdo="SDO",
+    controller_cs="SENSOR_CS",
+    device_cs="NCS",
+)
+```
+
+Controller-side `mosi`/`sdo` and `miso`/`sdi` are aliases. Peripheral-side `sdi`/`mosi` and
+`sdo`/`miso` are aliases. Specify at most one name from each pair. Data directions are optional,
+but SPI requires at least one. `controller_cs` and `device_cs` must be supplied together or both
+omitted.
+
+### `I2C`
+
+```python
+i2c = I2C(scope, id, controller=controller, scl="SCL", sda="SDA")
+i2c.add_peripheral(device=sensor, scl="SCL", sda="SDA")
+```
+
+Multiple peripherals share the declared SCL and SDA nets.
+
+### `UART`
+
+```python
+UART(
+    scope,
+    id,
+    left=controller,
+    left_tx="TX",
+    left_rx="RX",
+    right=adapter,
+    right_tx="TXD",
+    right_rx="RXD",
+)
+```
+
+UART connects left TX to right RX and left RX to right TX. Either direction may be omitted.
+
+### Pin-name warnings
+
+Well-known names such as `SPI1_MOSI`, `SCLK`, `SDI`, `SDO`, `I2C_SDA`, `TXD`, and `RXD` are used
+only to warn about clear role conflicts. Unknown names such as `GPIO2` remain valid without a
+warning. Use a reasoned override for intentional exceptions:
+
+```python
+sck=pin_override(
+    sensor.pin("MISO"),
+    reason="The shared legacy symbol has an incorrect pin name.",
+)
+```
 
 ## Values and units
 

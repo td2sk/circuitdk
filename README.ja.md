@@ -66,6 +66,7 @@ CircuitDKは、論理設計についてはPythonを正としつつ、KiCad回路
 - 意図した接続とKiCad自身が出力したnetlistを比較する
 - KiCad ERCを実行し、deployの成功と手動配線待ちを区別する
 - `no_connect()`で意図的な未使用pinを明示する
+- SPI、I²C、UART接続を、pin roleの検査付きで宣言する
 - pull-up、pull-down、LED indicator、voltage divider、decouplingを再利用する
 - 既存回路図のsymbolをadoptし、置換せずに論理IDを変更する
 - 解決したsymbol・footprint libraryの取得元をlock fileに記録する
@@ -359,6 +360,30 @@ resistance、decoupling、未使用pinの明示などを検査できます。
 
 ```python
 controller.pin("NC").no_connect()
+```
+
+Protocol constructではすべてのpinを明示的に選びつつ、pin名に明らかな矛盾があれば
+warningを受け取れます。
+
+```python
+from circuitdk.protocols import SPI
+
+spi = SPI(
+    circuit,
+    "SensorBus",
+    controller=controller,
+    sck="SPI_SCK",
+    mosi="SPI_MOSI",
+    miso="SPI_MISO",
+)
+spi.add_peripheral(
+    device=sensor,
+    sck="SCLK",
+    sdi="SDI",
+    sdo="SDO",
+    controller_cs="SENSOR_CS",
+    device_cs="NCS",
+)
 ```
 
 ## 既存の回路図で使用する

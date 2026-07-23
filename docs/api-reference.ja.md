@@ -240,14 +240,80 @@ VoltageDivider(
 
 `.upper`、`.lower`と、分圧出力の`.output` netを公開します。
 
-### `Interface`と`SpiInterface`
+## Protocol接続
 
-`Interface(scope, id, *, pins={role: pin})`は、関連するpinをroleごとにまとめます。
-`.pin(role)`でpinを取得し、`.connect(other, roles=None)`で共通roleまたは明示したrole mapを
-接続します。
+stableなprotocol-aware APIは`circuitdk.protocols`からimportします。
 
-`SpiInterface`は`sck`、`mosi`、`miso`、`chip_select` roleを持つ型付きのconvenience
-interfaceです。
+```python
+from circuitdk.protocols import I2C, SPI, UART, pin_override
+```
+
+Protocolのpin selectorには、`Pin`、endpoint ownerからの相対pin名、相対pin番号を指定できます。
+CircuitDKが未指定のpinを自動選択することはありません。
+
+### `SPI`
+
+```python
+spi = SPI(
+    scope,
+    id,
+    controller=controller,
+    sck="SPI_SCK",
+    mosi="SPI_MOSI",
+    miso="SPI_MISO",
+)
+spi.add_peripheral(
+    device=sensor,
+    sck="SCLK",
+    sdi="SDI",
+    sdo="SDO",
+    controller_cs="SENSOR_CS",
+    device_cs="NCS",
+)
+```
+
+controller側では`mosi`/`sdo`と`miso`/`sdi`、peripheral側では`sdi`/`mosi`と
+`sdo`/`miso`がaliasです。同じ組から指定できるのは一方だけです。data方向は省略できますが、
+少なくとも一方向が必要です。`controller_cs`と`device_cs`は両方指定するか、両方省略します。
+
+### `I2C`
+
+```python
+i2c = I2C(scope, id, controller=controller, scl="SCL", sda="SDA")
+i2c.add_peripheral(device=sensor, scl="SCL", sda="SDA")
+```
+
+複数のperipheralが宣言されたSCLとSDA netを共有します。
+
+### `UART`
+
+```python
+UART(
+    scope,
+    id,
+    left=controller,
+    left_tx="TX",
+    left_rx="RX",
+    right=adapter,
+    right_tx="TXD",
+    right_rx="RXD",
+)
+```
+
+left TXとright RX、left RXとright TXを接続します。どちらか一方向だけでも利用できます。
+
+### Pin名warning
+
+`SPI1_MOSI`、`SCLK`、`SDI`、`SDO`、`I2C_SDA`、`TXD`、`RXD`などの既知の名前は、
+明らかなrole矛盾を警告するためだけに使われます。`GPIO2`のような不明な名前もwarningなしで
+利用できます。意図的な例外には理由付きoverrideを使います。
+
+```python
+sck=pin_override(
+    sensor.pin("MISO"),
+    reason="The shared legacy symbol has an incorrect pin name.",
+)
+```
 
 ## 値と単位
 

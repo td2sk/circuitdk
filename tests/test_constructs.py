@@ -8,7 +8,6 @@ from circuitdk import (
     LedIndicator,
     Part,
     Quantity,
-    SpiInterface,
     V,
     VoltageDivider,
     kohm,
@@ -17,6 +16,7 @@ from circuitdk import (
     validate_intents,
     validate_pin_coverage,
 )
+from circuitdk.protocols import SPI
 
 
 def test_synthesizes_deterministic_parts_and_net_partitions() -> None:
@@ -96,7 +96,7 @@ def test_high_level_patterns_register_parts_connectivity_and_intent() -> None:
     assert validate_intents(ir).ok
 
 
-def test_voltage_divider_and_interfaces_create_semantic_connectivity() -> None:
+def test_voltage_divider_and_spi_create_semantic_connectivity() -> None:
     circuit = Circuit("Interfaces")
     gnd = circuit.ground()
     supply = circuit.power("VCC", voltage=5 * V)
@@ -120,23 +120,22 @@ def test_voltage_divider_and_interfaces_create_semantic_connectivity() -> None:
         symbol="Test:Sensor",
         pins={"SCK": "1", "MOSI": "2", "MISO": "3", "CS": "4"},
     )
-    controller_spi = SpiInterface(
-        controller,
+    spi = SPI(
+        circuit,
         "Spi",
-        sck=controller.pin("SCK"),
-        mosi=controller.pin("MOSI"),
-        miso=controller.pin("MISO"),
-        chip_select=controller.pin("CS"),
+        controller=controller,
+        sck="SCK",
+        mosi="MOSI",
+        miso="MISO",
     )
-    sensor_spi = SpiInterface(
-        sensor,
-        "Spi",
-        sck=sensor.pin("SCK"),
-        mosi=sensor.pin("MOSI"),
-        miso=sensor.pin("MISO"),
-        chip_select=sensor.pin("CS"),
+    spi.add_peripheral(
+        device=sensor,
+        sck="SCK",
+        mosi="MOSI",
+        miso="MISO",
+        controller_cs="CS",
+        device_cs="CS",
     )
-    controller_spi.connect(sensor_spi)
 
     ir = circuit.synth()
 
