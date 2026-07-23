@@ -90,7 +90,6 @@ The root construct and mutable circuit builder.
 | `ground(id="GND")` | Create a ground `Net`. |
 | `connect(*pins)` | Connect at least two pins through an anonymous net. |
 | `no_connect(pin)` | Mark a pin as intentionally unused. Prefer `pin.no_connect()`. |
-| `add_intent(kind, subject, **parameters)` | Add a custom semantic intent for validation. |
 | `synth()` | Produce immutable `CircuitIR`. Normally the CLI calls this through `KicadProject`. |
 
 Keep the returned `Part` and `Net` objects in normal Python variables; there is no public global
@@ -167,7 +166,7 @@ vdd.connect(controller.pin("VCC"))
 vdd.connect(sensor.pin("VDD"), capacitor.pin1)
 ```
 
-## Reusable parts and circuit intent
+## Passive parts
 
 ### `Resistor`, `Capacitor`, and `Inductor`
 
@@ -181,31 +180,29 @@ All three expose `pin1` and `pin2`. They retain their numeric value as `.resista
 `.capacitance`, or `.inductance` and use the corresponding `Device:R`, `Device:C`, or `Device:L`
 symbol.
 
-### Pull resistors
+Import them from `circuitdk.parts`.
+
+## Experimental circuit patterns
 
 ```python
-pull_down(scope, id, *, signal, ground, resistance, footprint=None)
-pull_up(scope, id, *, signal, power, resistance, footprint=None)
-```
-
-These return the created `Resistor`, connect it, and record a default-logic-level intent.
-
-### `DecouplingCapacitor`
-
-```python
-DecouplingCapacitor(
-    scope,
-    id,
-    *,
-    power_pin,
-    ground,
-    capacitance,
-    footprint=None,
+from circuitdk.experimental.patterns import (
+    LedIndicator,
+    VoltageDivider,
+    decouple,
+    pull_down,
+    pull_up,
 )
 ```
 
-Creates and exposes `.capacitor`, connects it from the power pin to ground, and records a
-decoupling intent.
+These APIs are under active design and may change or be removed without deprecation, including in
+patch releases. Pull and decoupling helpers accept explicitly created parts and add only ordinary
+connectivity:
+
+```python
+pull_down(*, signal, resistor, ground)
+pull_up(*, signal, resistor, power)
+decouple(*, power_pin, capacitor, ground)
+```
 
 ### `LedIndicator`
 
@@ -222,7 +219,7 @@ LedIndicator(
 )
 ```
 
-Creates `.resistor` and `.led`, connects them in series, and records a current-limiting intent.
+Creates `.resistor` and `.led` and connects them in series.
 
 ### `VoltageDivider`
 
@@ -371,7 +368,7 @@ tests. Normal user code should rely on automatic discovery.
 | `plan()` | Compare desired state with the schematic. |
 | `drift()` | Report managed KiCad-side changes since the previous deploy. |
 | `deploy(backup=True)` | Apply managed changes atomically. |
-| `run_tests()` | Run conformance, intent, pin, library, and ERC checks. |
+| `run_tests()` | Run connectivity, pin, library, and ERC checks. |
 | `inspect()` | Return desired, actual, plan, drift, and library data as a dictionary. |
 | `library_lock()` | Resolve library hashes and report lock issues. |
 | `adopt(reference, circuit_id)` | Attach a logical ID to an existing KiCad symbol. |
@@ -383,15 +380,15 @@ semantics. Direct methods are useful for tests and custom automation.
 ## Validation helpers
 
 `validate_pin_coverage(circuit_ir)` checks that every resolved pin is connected or explicitly
-no-connect. `validate_intents(circuit_ir)` checks the semantic intents created by reusable
-constructs. Their result objects expose `.issues` and the boolean `.ok` property. Normal users can
-rely on `circuitdk test`, which runs these checks together with actual-schematic and ERC checks.
+no-connect. Its result exposes `.unspecified` and the boolean `.ok` property. Normal users can rely
+on `circuitdk test`, which runs this check together with actual-schematic connectivity, library,
+and ERC checks.
 
 ## Circuit IR
 
-`CircuitIR`, `PartIR`, `NetIR`, `PinRef`, and `IntentIR` are immutable synthesized views. They are
-useful for custom analysis and tests, but are not builders. Construct the design with `Circuit`,
-`Part`, `Net`, and reusable constructs, then call `project.synth()`.
+`CircuitIR`, `PartIR`, `NetIR`, and `PinRef` are immutable synthesized views. They are useful for
+custom analysis and tests, but are not builders. Construct the design with `Circuit`, `Part`, and
+`Net`, then call `project.synth()`.
 
 The alpha API may still evolve. Public names re-exported from `circuitdk` are the supported user
 surface; modules under `circuitdk.targets` are advanced backend APIs.

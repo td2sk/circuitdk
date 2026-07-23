@@ -19,7 +19,7 @@ wheels = [
 
 [[package]]
 name = "circuitdk"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "." }
 dependencies = [
     { name = "circuitdk-lossless-sexpr" },

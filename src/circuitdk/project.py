@@ -11,14 +11,9 @@ from lossless_sexpr import TextEdit, apply_edits, parse
 
 from .conformance import ConformanceResult, compare_connectivity
 from .constructs import Circuit
-from .ir import CircuitIR, IntentIR, NetIR, PartIR, PinRef
+from .ir import CircuitIR, NetIR, PartIR, PinRef
 from .lock import CircuitLock, LockedLibrary
-from .rules import (
-    IntentValidationResult,
-    PinCoverageResult,
-    validate_intents,
-    validate_pin_coverage,
-)
+from .rules import PinCoverageResult, validate_pin_coverage
 from .state import ProjectState
 from .targets.kicad.cli_runner import ErcResult, KicadCli, actual_circuit_from_xml
 from .targets.kicad.document import KicadSchematic, KicadSymbol
@@ -89,8 +84,6 @@ class ProjectTestResult:
     plan: DeploymentPlan
     connectivity: ConformanceResult | None
     erc: ErcResult | None
-    desired_intents: IntentValidationResult
-    actual_intents: IntentValidationResult | None
     pin_coverage: PinCoverageResult
     library_issues: tuple[str, ...]
     infrastructure_errors: tuple[str, ...]
@@ -103,9 +96,6 @@ class ProjectTestResult:
             and self.connectivity.ok
             and self.erc is not None
             and self.erc.ok
-            and self.desired_intents.ok
-            and self.actual_intents is not None
-            and self.actual_intents.ok
             and self.pin_coverage.ok
             and not self.library_issues
             and not self.infrastructure_errors
@@ -309,14 +299,11 @@ class KicadProject:
         schematic = KicadSchematic.load(self.schematic)
         plan, _ = self._plan_with_resolver(desired, schematic)
         _, library_issues = self.library_lock()
-        desired_intents = validate_intents(desired)
         pin_coverage = validate_pin_coverage(desired)
         if self.kicad_cli is None:
             return ProjectTestResult(
                 plan,
                 None,
-                None,
-                desired_intents,
                 None,
                 pin_coverage,
                 library_issues,
@@ -326,14 +313,11 @@ class KicadProject:
             netlist = self.kicad_cli.export_netlist_xml(self.schematic)
             actual = actual_circuit_from_xml(desired, schematic, netlist)
             connectivity = compare_connectivity(desired, actual)
-            actual_intents = validate_intents(actual)
             erc = self.kicad_cli.erc(self.schematic)
         except Exception as error:
             return ProjectTestResult(
                 plan,
                 None,
-                None,
-                desired_intents,
                 None,
                 pin_coverage,
                 library_issues,
@@ -343,8 +327,6 @@ class KicadProject:
             plan,
             connectivity,
             erc,
-            desired_intents,
-            actual_intents,
             pin_coverage,
             library_issues,
             (),
@@ -458,25 +440,10 @@ def _resolve_library_pins(circuit: CircuitIR, resolver: SymbolResolver) -> Circu
         for net in circuit.nets
     )
     no_connects = tuple(sorted(replace(pin) for pin in circuit.no_connects))
-    intents = tuple(
-        IntentIR(
-            intent.kind,
-            replacements[intent.subject].key if intent.subject in replacements else intent.subject,
-            tuple(
-                (
-                    name,
-                    replacements[value].key if value in replacements else value,
-                )
-                for name, value in intent.parameters
-            ),
-        )
-        for intent in circuit.intents
-    )
     return CircuitIR(
         circuit.id,
         tuple(parts),
         nets,
-        intents,
         no_connects,
         circuit.schema_version,
     )

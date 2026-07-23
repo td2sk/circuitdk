@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
-from .ir import CircuitIR, IntentIR, NetIR, PartIR, PinRef
+from .ir import CircuitIR, NetIR, PartIR, PinRef
 from .units import Quantity
 
 
@@ -124,7 +124,6 @@ class Circuit(Construct):
         self._parts: list[Part] = []
         self._nets: list[Net] = []
         self._anonymous_connections: list[tuple[Pin, ...]] = []
-        self._intents: list[IntentIR] = []
         self._no_connects: set[Pin] = set()
         super().__init__(None, construct_id)
 
@@ -143,10 +142,6 @@ class Circuit(Construct):
         if any(pin.part.circuit is not self for pin in pins):
             raise ValueError("cannot connect pins from another circuit")
         self._anonymous_connections.append(tuple(pins))
-
-    def add_intent(self, kind: str, subject: str, **parameters: object) -> None:
-        normalized = tuple(sorted((name, str(value)) for name, value in parameters.items()))
-        self._intents.append(IntentIR(kind, subject, normalized))
 
     def no_connect(self, pin: Pin) -> None:
         if pin.part.circuit is not self:
@@ -192,7 +187,6 @@ class Circuit(Construct):
             self.path,
             part_irs,
             tuple(sorted(net_irs, key=lambda item: item.id)),
-            tuple(sorted(self._intents, key=lambda item: (item.kind, item.subject))),
             tuple(sorted(pin.ref for pin in self._no_connects)),
         )
 

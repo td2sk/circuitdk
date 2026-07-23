@@ -23,24 +23,22 @@ circuitdk test
 
 ## Why CircuitDK?
 
-Graphical schematics are easy to read and arrange, but circuit intent can be difficult to review,
-reuse, and test. Pure code-generated schematics solve the reproducibility problem at the cost of
-making the generated drawing disposable.
+Managing circuit logic as code makes changes reviewable in Git, testable, and reusable. At the
+same time, a schematic must remain easy for people to read and arrange.
 
-CircuitDK keeps both views useful:
+CircuitDK lets you keep both benefits:
 
-- define parts, values, footprints, nets, and reusable circuit intent in ordinary Python;
-- inspect additions, changes, and removals before touching the schematic;
-- keep schematic presentation editable in KiCad. Preserve placement and wiring whether arranged
-  manually or through MCP;
-- detect drift in managed properties;
-- verify that the KiCad schematic realizes the connectivity declared in code;
+- review circuit changes as a diff before applying them;
+- automatically test whether the KiCad wiring matches the declared connectivity;
+- catch suspicious SPI, I²C, and UART pin assignments before arranging the schematic;
+- update parts and managed properties without losing carefully arranged KiCad placement and
+  wiring;
+- reuse common circuit structures with ordinary Python functions and classes; and
 - **AI-friendly:** structure circuit logic as testable Python for more reliable AI-assisted
-  design; and
-- combine semantic circuit checks with KiCad ERC in local workflows and CI.
+  design.
 
-CircuitDK is a reconciler, not a schematic renderer. Code remains authoritative for circuit logic
-without making the schematic disposable.
+Keep logical design verifiable in Python and finish the human-readable schematic in KiCad. That is
+the workflow CircuitDK is designed for.
 
 ## How it differs
 
@@ -68,7 +66,8 @@ keeping the KiCad schematic as a carefully arranged, human-readable engineering 
 - Run KiCad ERC and distinguish successful deployment from pending manual wiring.
 - Mark intentionally unused pins with `no_connect()`.
 - Declare SPI, I²C, and UART connections with role-aware pin checks.
-- Reuse patterns such as pull-ups, pull-downs, LED indicators, voltage dividers, and decoupling.
+- Express common patterns such as pull-ups, pull-downs, decoupling, LED indicators, and voltage
+  dividers with high-level APIs (experimental).
 - Adopt symbols from an existing schematic and rename logical IDs without replacing them.
 - Record resolved symbol and footprint library sources in a lock file.
 
@@ -295,7 +294,7 @@ circuitdk test
 | `circuitdk synth` | Build the deterministic desired circuit from Python. |
 | `circuitdk diff` | Preview changes to code-owned schematic state. |
 | `circuitdk deploy` | Apply managed parts and properties atomically. |
-| `circuitdk test` | Check connectivity, intent rules, pin coverage, libraries, and ERC. |
+| `circuitdk test` | Check connectivity, pin coverage, libraries, and ERC. |
 | `circuitdk drift` | Find managed fields changed in KiCad since the last deploy. |
 | `circuitdk adopt` | Bring an existing KiCad symbol under CircuitDK management. |
 | `circuitdk move` | Rename a stable logical ID without replacing its symbol. |
@@ -323,40 +322,31 @@ restores the value declared in Python.
 CircuitDK does not create, rewrite, or delete wires. When code removes a part, any resulting wire
 cleanup remains a manual KiCad operation.
 
-## Testing circuit intent
+## High-level circuit APIs
 
-Reusable constructs can describe both parts and the reason they exist:
+Common circuit structures can be expressed concisely with high-level APIs:
 
 ```python
-from circuitdk import DecouplingCapacitor, LedIndicator, nF, pull_down
+# APIs in circuitdk.experimental are experimental and may change in future releases.
+from circuitdk.experimental.patterns import decouple, pull_down
+from circuitdk.parts import Capacitor, Resistor
 
-LedIndicator(
-    circuit,
-    "StatusLed",
-    drive=controller.pin("STATUS"),
-    return_to=gnd,
-    series_resistance=1 * kohm,
-)
-
+pull_resistor = Resistor(circuit, "EnablePullDown", resistance=10 * kohm)
 pull_down(
-    circuit,
-    "EnableDefault",
     signal=controller.pin("ENABLE"),
+    resistor=pull_resistor,
     ground=gnd,
-    resistance=10 * kohm,
 )
 
-DecouplingCapacitor(
-    circuit,
-    "ControllerDecoupling",
+decoupling_capacitor = Capacitor(circuit, "ControllerDecoupling", capacitance=100 * nF)
+decouple(
     power_pin=controller.pin("VCC"),
+    capacitor=decoupling_capacitor,
     ground=gnd,
-    capacitance=100 * nF,
 )
 ```
 
-CircuitDK can then check facts beyond raw file syntax, including expected connectivity, unintended
-shorts, current-limiting resistance, decoupling, and explicit treatment of unused pins:
+Intentionally unused pins can also be declared explicitly:
 
 ```python
 controller.pin("NC").no_connect()
@@ -410,7 +400,7 @@ project = KicadProject(
 - Wire routing is intentionally manual.
 - Hierarchical-sheet management, design blocks, and label-stub realization are not implemented.
 - Save and close the schematic before deploying; unsaved editor state cannot be reconciled safely.
-- CircuitDK verifies declared intent and KiCad ERC results. It does not prove that a circuit is
+- CircuitDK verifies declared connectivity and KiCad ERC results. It does not prove that a circuit is
   electrically correct or suitable for manufacture.
 
 ## Documentation

@@ -49,20 +49,12 @@ class NetIR:
 
 
 @dataclass(frozen=True, slots=True)
-class IntentIR:
-    kind: str
-    subject: str
-    parameters: tuple[tuple[str, str], ...] = ()
-
-
-@dataclass(frozen=True, slots=True)
 class CircuitIR:
     id: str
     parts: tuple[PartIR, ...]
     nets: tuple[NetIR, ...]
-    intents: tuple[IntentIR, ...] = ()
     no_connects: tuple[PinRef, ...] = ()
-    schema_version: int = 1
+    schema_version: int = 2
 
     def part(self, circuit_id: str) -> PartIR:
         return next(part for part in self.parts if part.id == circuit_id)

@@ -297,12 +297,6 @@ def test_command(
             if result.erc is not None
             else None
         ),
-        "desired_intent_issues": [asdict(issue) for issue in result.desired_intents.issues],
-        "actual_intent_issues": (
-            [asdict(issue) for issue in result.actual_intents.issues]
-            if result.actual_intents is not None
-            else None
-        ),
         "unspecified_pins": result.pin_coverage.unspecified,
         "library_issues": result.library_issues,
         "infrastructure_errors": result.infrastructure_errors,
@@ -316,10 +310,6 @@ def test_command(
         for violation in result.erc.violations if result.erc is not None else ():
             if violation.severity != "exclusion":
                 typer.echo(f"  ERC {violation.severity}: {violation.description}")
-        for issue in result.desired_intents.issues:
-            typer.echo(f"  desired intent: {issue.message}")
-        for issue in result.actual_intents.issues if result.actual_intents is not None else ():
-            typer.echo(f"  actual intent: {issue.message}")
         for pin in result.pin_coverage.unspecified:
             typer.echo(f"  unspecified pin: {pin}")
         for issue in result.library_issues:

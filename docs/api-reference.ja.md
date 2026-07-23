@@ -90,7 +90,6 @@ Root constructであり、mutableな回路builderです。
 | `ground(id="GND")` | Ground `Net`を作成する。 |
 | `connect(*pins)` | 2つ以上のpinをanonymous netで接続する。 |
 | `no_connect(pin)` | 意図的な未接続pinとして指定する。通常は`pin.no_connect()`を使用する。 |
-| `add_intent(kind, subject, **parameters)` | 検証対象の独自semantic intentを追加する。 |
 | `synth()` | Immutableな`CircuitIR`を生成する。通常はCLIが`KicadProject`経由で呼び出す。 |
 
 作成した`Part`や`Net`は通常のPython変数で保持してください。Alpha APIにはglobalな公開
@@ -168,7 +167,7 @@ vdd.connect(controller.pin("VCC"))
 vdd.connect(sensor.pin("VDD"), capacitor.pin1)
 ```
 
-## 再利用可能な部品と回路intent
+## Passive部品
 
 ### `Resistor`、`Capacitor`、`Inductor`
 
@@ -181,30 +180,28 @@ Inductor(scope, id, *, inductance, footprint=None)
 いずれも`pin1`と`pin2`を公開します。数値を`.resistance`、`.capacitance`、
 `.inductance`として保持し、対応する`Device:R`、`Device:C`、`Device:L` symbolを設定します。
 
-### Pull resistor
+`circuitdk.parts`からimportします。
+
+## Experimentalな回路pattern
 
 ```python
-pull_down(scope, id, *, signal, ground, resistance, footprint=None)
-pull_up(scope, id, *, signal, power, resistance, footprint=None)
-```
-
-作成した`Resistor`を返し、接続とdefault logic level intentの登録を行います。
-
-### `DecouplingCapacitor`
-
-```python
-DecouplingCapacitor(
-    scope,
-    id,
-    *,
-    power_pin,
-    ground,
-    capacitance,
-    footprint=None,
+from circuitdk.experimental.patterns import (
+    LedIndicator,
+    VoltageDivider,
+    decouple,
+    pull_down,
+    pull_up,
 )
 ```
 
-`.capacitor`を作成・公開し、power pinからgroundへ接続してdecoupling intentを登録します。
+これらは設計中のAPIであり、patch releaseでも予告なく変更・削除される可能性があります。
+Pullとdecoupling helperは明示的に作成した部品を受け取り、通常の接続だけを追加します。
+
+```python
+pull_down(*, signal, resistor, ground)
+pull_up(*, signal, resistor, power)
+decouple(*, power_pin, capacitor, ground)
+```
 
 ### `LedIndicator`
 
@@ -221,7 +218,7 @@ LedIndicator(
 )
 ```
 
-`.resistor`と`.led`を作成して直列に接続し、current-limiting intentを登録します。
+`.resistor`と`.led`を作成して直列に接続します。
 
 ### `VoltageDivider`
 
@@ -368,7 +365,7 @@ KicadProject(
 | `plan()` | Desired stateと回路図を比較する。 |
 | `drift()` | 前回deploy以降のmanagedなKiCad側変更を報告する。 |
 | `deploy(backup=True)` | Managedな変更をatomicに適用する。 |
-| `run_tests()` | Conformance、intent、pin、library、ERCを検査する。 |
+| `run_tests()` | Connectivity、pin、library、ERCを検査する。 |
 | `inspect()` | Desired、actual、plan、drift、library dataをdictionaryで返す。 |
 | `library_lock()` | Library hashを解決し、lockの問題を報告する。 |
 | `adopt(reference, circuit_id)` | 既存KiCad symbolへ論理IDを付与する。 |
@@ -380,15 +377,15 @@ KicadProject(
 ## Validation helper
 
 `validate_pin_coverage(circuit_ir)`は、解決されたすべてのpinが接続済みまたは明示的な
-no-connectかを検査します。`validate_intents(circuit_ir)`は、再利用constructが作成した
-semantic intentを検査します。結果objectは`.issues`とbooleanの`.ok` propertyを公開します。
-通常は`circuitdk test`を使うことで、actual schematicとERCの検査もまとめて実行できます。
+no-connectかを検査します。結果objectは`.unspecified`とbooleanの`.ok` propertyを公開します。
+通常は`circuitdk test`を使うことで、actual schematic connectivity、library、ERCの検査も
+まとめて実行できます。
 
 ## Circuit IR
 
-`CircuitIR`、`PartIR`、`NetIR`、`PinRef`、`IntentIR`は、synth後のimmutableなviewです。独自の
-解析やtestには利用できますが、builderではありません。`Circuit`、`Part`、`Net`、再利用
-constructで回路を構築してから、`project.synth()`を呼び出してください。
+`CircuitIR`、`PartIR`、`NetIR`、`PinRef`は、synth後のimmutableなviewです。独自の解析やtestには
+利用できますが、builderではありません。`Circuit`、`Part`、`Net`で回路を構築してから、
+`project.synth()`を呼び出してください。
 
 Alpha APIは今後変更される可能性があります。`circuitdk`からre-exportされる公開名が、
 サポート対象のユーザーAPIです。`circuitdk.targets`以下は高度なbackend APIです。

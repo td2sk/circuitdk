@@ -111,9 +111,9 @@ Run the strict conformance checks after wiring:
 circuitdk test
 ```
 
-Test exports the actual XML netlist with KiCad 10, compares logical pin partitions, checks intent
-rules and pin coverage, validates resolved libraries and footprints, and runs ERC. Unlike deploy,
-test remains unsuccessful until declared connections are realized.
+Test exports the actual XML netlist with KiCad 10, compares logical pin partitions, checks pin
+coverage, validates resolved libraries and footprints, and runs ERC. Unlike deploy, test remains
+unsuccessful until declared connections are realized.
 
 ## Symbol and footprint libraries
 
@@ -175,13 +175,14 @@ circuitdk move --from /Board/OldName --to /Board/NewName
 Use `circuitdk drift` to report code-owned fields that have changed in KiCad since the previous
 deploy. Desired Python state wins on the next deploy.
 
-## Reusable circuit intent
+## Experimental circuit patterns
 
-CircuitDK includes constructs for pull-ups, pull-downs, decoupling capacitors, LED indicators,
-voltage dividers, and interfaces. These constructs add ordinary parts and connectivity together
-with intent records checked by `circuitdk test`.
+Pull resistors, decoupling helpers, LED indicators, and voltage dividers currently live under
+`circuitdk.experimental.patterns`. They create ordinary parts and connectivity without hidden
+semantic validation. Experimental APIs may change or be removed without deprecation, including in
+patch releases.
 
-See [Testing circuit intent](../README.md#testing-circuit-intent) for examples.
+See [Experimental circuit patterns](../README.md#experimental-circuit-patterns) for examples.
 
 ## Protocol-aware connections
 

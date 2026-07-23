@@ -177,7 +177,7 @@ def actual_circuit_from_xml(
             if pins:
                 name = net_node.get("name") or f"actual-{index}"
                 nets.append(NetIR(name, tuple(sorted(set(pins)))))
-    return CircuitIR(desired.id, desired.parts, tuple(nets), desired.intents)
+    return CircuitIR(desired.id, desired.parts, tuple(nets))
 
 
 def _component_circuit_id(component: ET.Element) -> str | None:

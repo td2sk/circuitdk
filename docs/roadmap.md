@@ -7,7 +7,7 @@ does not promise a release date or implementation order.
 
 CircuitDK currently targets KiCad 10 and a single root schematic. It reconciles parts, managed
 properties, and no-connect markers while leaving symbol placement and wire routing to KiCad. The
-CLI provides semantic diff, deploy, drift detection, connectivity checks, intent rules, ERC, and
+CLI provides semantic diff, deploy, drift detection, connectivity checks, pin coverage, ERC, and
 library locking.
 
 CircuitDK can consume connectivity exported by an existing KiCad design, including labels,

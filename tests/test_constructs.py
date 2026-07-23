@@ -4,18 +4,20 @@ import pytest
 
 from circuitdk import (
     Circuit,
-    DecouplingCapacitor,
-    LedIndicator,
     Part,
     Quantity,
     V,
-    VoltageDivider,
     kohm,
     nF,
-    pull_down,
-    validate_intents,
     validate_pin_coverage,
 )
+from circuitdk.experimental.patterns import (
+    LedIndicator,
+    VoltageDivider,
+    decouple,
+    pull_down,
+)
+from circuitdk.parts import Capacitor, Resistor
 from circuitdk.protocols import SPI
 
 
@@ -65,7 +67,7 @@ def test_connecting_two_named_nets_is_rejected() -> None:
         circuit.synth()
 
 
-def test_high_level_patterns_register_parts_connectivity_and_intent() -> None:
+def test_experimental_patterns_create_connectivity() -> None:
     circuit = Circuit("Patterns")
     gnd = circuit.ground()
     mcu = Part(
@@ -77,26 +79,21 @@ def test_high_level_patterns_register_parts_connectivity_and_intent() -> None:
     gnd.connect(mcu.pin("GND"))
 
     LedIndicator(circuit, "Status", drive=mcu.pin("OUT"), return_to=gnd, series_resistance=1 * kohm)
-    pull_down(circuit, "ResetDefault", signal=mcu.pin("RESET"), ground=gnd, resistance=10 * kohm)
-    DecouplingCapacitor(
-        circuit,
-        "McuDecoupling",
+    pull_resistor = Resistor(circuit, "ResetDefault", resistance=10 * kohm)
+    pull_down(signal=mcu.pin("RESET"), resistor=pull_resistor, ground=gnd)
+    capacitor = Capacitor(circuit, "McuDecoupling", capacitance=100 * nF)
+    decouple(
         power_pin=mcu.pin("VCC"),
+        capacitor=capacitor,
         ground=gnd,
-        capacitance=100 * nF,
     )
 
     ir = circuit.synth()
     assert len(ir.parts) == 5
-    assert {intent.kind for intent in ir.intents} == {
-        "current_limited_led",
-        "decoupling",
-        "default_logic_level",
-    }
-    assert validate_intents(ir).ok
+    assert len(ir.nets) == 5
 
 
-def test_voltage_divider_and_spi_create_semantic_connectivity() -> None:
+def test_voltage_divider_and_spi_create_connectivity() -> None:
     circuit = Circuit("Interfaces")
     gnd = circuit.ground()
     supply = circuit.power("VCC", voltage=5 * V)
@@ -140,7 +137,6 @@ def test_voltage_divider_and_spi_create_semantic_connectivity() -> None:
     ir = circuit.synth()
 
     assert divider.output.path == "/Interfaces/BatterySense/Output"
-    assert validate_intents(ir).ok
     assert sum(len(net.pins) == 2 for net in ir.nets) >= 4
 
 

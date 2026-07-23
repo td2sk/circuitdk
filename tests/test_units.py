@@ -4,22 +4,8 @@ from decimal import Decimal
 
 import pytest
 
-from circuitdk import (
-    Capacitor,
-    Circuit,
-    F,
-    H,
-    Inductor,
-    Mohm,
-    Resistor,
-    kohm,
-    mH,
-    nF,
-    nH,
-    ohm,
-    uF,
-    uH,
-)
+from circuitdk import Circuit, F, H, Mohm, kohm, mH, nF, nH, ohm, uF, uH
+from circuitdk.parts import Capacitor, Inductor, Resistor
 from circuitdk.units import format_schematic_value
 
 

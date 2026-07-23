@@ -37,9 +37,9 @@ compares partitions of logical pins. ERC is run during both deploy validation an
 lossless CST, diagnostics, queries, and non-overlapping text edits. Unchanged input renders byte
 for byte identically.
 
-`circuitdk` contains constructs, immutable IR, intent rules, library and footprint resolution,
-connectivity conformance, project/state/lock handling, the KiCad typed syntax facade,
-reconciliation, and CLI.
+`circuitdk` contains constructs, immutable IR, protocol-aware connection helpers, library and
+footprint resolution, connectivity conformance, project/state/lock handling, the KiCad typed
+syntax facade, reconciliation, and CLI.
 
 ## Library loading
 

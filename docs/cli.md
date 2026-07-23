@@ -12,7 +12,7 @@ Use `circuitdk --version` to print the installed CircuitDK version.
 | `circuitdk synth` | Build the deterministic desired Circuit IR without opening KiCad |
 | `circuitdk diff` | Show symbol, property, and no-connect operations; exits 2 when changes exist |
 | `circuitdk deploy` | Atomically apply code-owned changes and report validation separately |
-| `circuitdk test` | Check managed state, net partitions, intent rules, libraries, and ERC |
+| `circuitdk test` | Check managed state, net partitions, pin coverage, libraries, and ERC |
 | `circuitdk drift` | Compare managed KiCad fields with the last deployed snapshot |
 | `circuitdk inspect` | Emit desired, actual, plan, drift, and library details |
 | `circuitdk adopt` | Add `CircuitDK:ID` to an existing symbol selected by reference |
