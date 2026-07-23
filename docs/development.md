@@ -24,6 +24,12 @@ uv run ty check
 uv run pytest
 ```
 
+Build both publishable workspace packages into `dist/`:
+
+```console
+poe build
+```
+
 Tests are split between the reusable parser package and CircuitDK integration tests. Fixtures
 should be actual KiCad 10 output where possible. Never normalize a fixture before round-trip
 testing: exact whitespace, ordering, and unknown syntax are part of the contract.

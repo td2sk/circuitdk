@@ -42,10 +42,15 @@ circuitdk-lossless-sexpr = { workspace = true }
 
 [dependency-groups]
 dev = [
+    "poethepoet>=0.48.0",
     "pytest>=8.4.0",
     "ruff>=0.15.0",
     "ty>=0.0.61",
 ]
+
+[tool.poe.tasks.build]
+help = "Build both publishable workspace packages into dist/."
+cmd = "uv build --all-packages --out-dir dist --clear"
 
 [tool.pytest.ini_options]
 testpaths = ["tests", "packages/lossless-sexpr/tests"]
