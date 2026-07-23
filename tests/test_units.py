@@ -49,6 +49,14 @@ def test_quantity_remains_numeric_and_converts_between_compatible_units() -> Non
         resistance.in_unit(uF)
 
 
+def test_quantity_supports_scalar_multiplication_from_either_side() -> None:
+    resistance = 48 * kohm
+
+    assert resistance * 2 == 96 * kohm
+    assert 2 * resistance == 96 * kohm
+    assert format_schematic_value(2 * resistance) == "96k"
+
+
 def test_passive_patterns_expose_typed_values() -> None:
     circuit = Circuit("Passives")
     resistor = Resistor(circuit, "R", resistance=4.7 * kohm)

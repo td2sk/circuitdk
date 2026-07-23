@@ -61,6 +61,9 @@ class Quantity:
             display_scale=self.display_scale,
         )
 
+    def __rmul__(self, factor: int | float | Decimal) -> Self:
+        return self * factor
+
     def in_unit(self, unit: Unit) -> Decimal:
         """Return the numeric value expressed in ``unit``."""
         if unit.symbol != self.dimension:
