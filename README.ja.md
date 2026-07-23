@@ -352,8 +352,7 @@ decouple(
 controller.pin("NC").no_connect()
 ```
 
-Protocol constructではすべてのpinを明示的に選びつつ、pin名に明らかな矛盾があれば
-warningを受け取れます。
+SPIバスとperipheralの接続を、signalの役割が分かる形でまとめて記述できます。
 
 ```python
 from circuitdk.protocols import SPI
@@ -374,6 +373,21 @@ spi.add_peripheral(
     controller_cs="SENSOR_CS",
     device_cs="NCS",
 )
+```
+
+pin名と指定した役割が矛盾している場合は、すぐにwarningが表示されます。
+
+```python
+# 意図的な間違い：SPI_MISOをclockとして指定
+incorrect_spi = SPI(
+    circuit,
+    "IncorrectBus",
+    controller=controller,
+    sck="SPI_MISO",
+    mosi="SPI_MOSI",
+)
+# ProtocolPinWarning: SPI_MISOはSPI clockとして指定されていますが、
+# pin名はSPI peripheral-to-controller dataを示しています。
 ```
 
 ## 既存の回路図で使用する

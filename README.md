@@ -352,7 +352,7 @@ Intentionally unused pins can also be declared explicitly:
 controller.pin("NC").no_connect()
 ```
 
-Protocol constructs keep every pin choice explicit while warning about clear naming conflicts:
+Describe an SPI bus and its peripheral connections together while keeping each signal's role clear:
 
 ```python
 from circuitdk.protocols import SPI
@@ -373,6 +373,21 @@ spi.add_peripheral(
     controller_cs="SENSOR_CS",
     device_cs="NCS",
 )
+```
+
+A conflicting pin name is reported immediately:
+
+```python
+# Intentional mistake: SPI_MISO is assigned to the clock role.
+incorrect_spi = SPI(
+    circuit,
+    "IncorrectBus",
+    controller=controller,
+    sck="SPI_MISO",
+    mosi="SPI_MOSI",
+)
+# ProtocolPinWarning: SPI_MISO is assigned as SPI clock,
+# but its name suggests SPI peripheral-to-controller data.
 ```
 
 ## Working with existing schematics
