@@ -175,14 +175,14 @@ circuitdk move --from /Board/OldName --to /Board/NewName
 Use `circuitdk drift` to report code-owned fields that have changed in KiCad since the previous
 deploy. Desired Python state wins on the next deploy.
 
-## Experimental circuit patterns
+## High-level circuit APIs
 
 Pull resistors, decoupling helpers, LED indicators, and voltage dividers currently live under
 `circuitdk.experimental.patterns`. They create ordinary parts and connectivity without hidden
 semantic validation. Experimental APIs may change or be removed without deprecation, including in
 patch releases.
 
-See [Experimental circuit patterns](../README.md#experimental-circuit-patterns) for examples.
+See [High-level circuit APIs](../README.md#high-level-circuit-apis) for examples.
 
 ## Protocol-aware connections
 
