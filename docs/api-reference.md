@@ -240,14 +240,14 @@ Exposes `.upper`, `.lower`, and the divider output `.output` net.
 
 ## Protocol connections
 
-Import stable protocol-aware APIs from `circuitdk.protocols`:
+SPI, I2C, and UART connections are available from `circuitdk.protocols`:
 
 ```python
 from circuitdk.protocols import I2C, SPI, UART, pin_override
 ```
 
-Protocol pin selectors accept a `Pin`, a pin name string relative to the declared endpoint owner,
-or an integer pin number relative to that owner. CircuitDK never selects an unspecified pin.
+For each signal, select a pin by name or number relative to its controller or device, or pass a
+`Pin` directly.
 
 ### `SPI`
 
@@ -303,9 +303,9 @@ UART connects left TX to right RX and left RX to right TX. Either direction may 
 
 ### Pin-name warnings
 
-Well-known names such as `SPI1_MOSI`, `SCLK`, `SDI`, `SDO`, `I2C_SDA`, `TXD`, and `RXD` are used
-only to warn about clear role conflicts. Unknown names such as `GPIO2` remain valid without a
-warning. Use a reasoned override for intentional exceptions:
+If a well-known pin name such as `SPI1_MOSI`, `SCLK`, `SDI`, `SDO`, `I2C_SDA`, `TXD`, or `RXD`
+conflicts with its assigned role, CircuitDK reports a warning. General-purpose names such as
+`GPIO2` remain valid. Use a reasoned override for intentional exceptions:
 
 ```python
 sck=pin_override(
