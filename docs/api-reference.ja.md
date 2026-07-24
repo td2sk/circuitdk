@@ -182,9 +182,10 @@ Inductor(scope, id, *, inductance, footprint=None)
 
 `circuitdk.parts`からimportします。
 
-## Experimentalな回路pattern
+## 回路のハイレベルAPI
 
 ```python
+# 回路の意図をより直接表現するためのpreview APIです。
 from circuitdk.experimental.patterns import (
     LedIndicator,
     VoltageDivider,
@@ -194,8 +195,13 @@ from circuitdk.experimental.patterns import (
 )
 ```
 
-これらは設計中のAPIであり、patch releaseでも予告なく変更・削除される可能性があります。
-Pullとdecoupling helperは明示的に作成した部品を受け取り、通常の接続だけを追加します。
+このpreview APIでは、よく使う回路構成を役割の分かる形で記述できます。将来的には、宣言した
+回路の意図に基づく自動検証によって、単純な接続確認だけでは見つけにくい設計ミスも早い段階で
+発見できるようになります。基本的な`Part`、`Net`、`connect()`による記述と組み合わせて
+使用できます。
+
+Pullとdecoupling helperは作成済みの部品を受け取るため、値、footprint、その他の部品設定を
+そのまま管理できます。
 
 ```python
 pull_down(*, signal, resistor, ground)

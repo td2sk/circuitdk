@@ -182,9 +182,10 @@ symbol.
 
 Import them from `circuitdk.parts`.
 
-## Experimental circuit patterns
+## High-level circuit APIs
 
 ```python
+# Preview APIs for expressing circuit intent more directly.
 from circuitdk.experimental.patterns import (
     LedIndicator,
     VoltageDivider,
@@ -194,9 +195,13 @@ from circuitdk.experimental.patterns import (
 )
 ```
 
-These APIs are under active design and may change or be removed without deprecation, including in
-patch releases. Pull and decoupling helpers accept explicitly created parts and add only ordinary
-connectivity:
+These preview APIs let you describe common circuit structures in terms of their roles. In the
+future, automatic validation based on declared circuit intent will help catch design mistakes that
+simple connectivity checks cannot reveal. They can be combined freely with `Part`, `Net`, and
+`connect()`.
+
+Pull and decoupling helpers accept parts you created, so values, footprints, and other part
+settings remain under your control:
 
 ```python
 pull_down(*, signal, resistor, ground)

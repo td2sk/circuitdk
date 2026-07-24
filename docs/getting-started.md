@@ -85,13 +85,11 @@ Apply the plan:
 circuitdk deploy
 ```
 
-Deploy inserts new symbols and their embedded library definitions into a staging area. It updates
-only code-owned fields on existing managed symbols. Existing positions, rotations, fields, wires,
-labels, junctions, and graphics are preserved.
+Deploy adds new symbols to a staging area and updates properties owned by the Python design.
+Existing placement and wiring arranged in KiCad are preserved.
 
-The write is transactional: CircuitDK writes and reparses a temporary file, asks KiCad to parse it
-and export a netlist, verifies that the source did not change concurrently, and then replaces the
-schematic atomically. Save and close the schematic in KiCad before deploying.
+CircuitDK validates the updated schematic with KiCad before saving it safely. Save and close the
+schematic in KiCad before running deploy.
 
 ## Complete manual wiring
 
@@ -175,14 +173,56 @@ circuitdk move --from /Board/OldName --to /Board/NewName
 Use `circuitdk drift` to report code-owned fields that have changed in KiCad since the previous
 deploy. Desired Python state wins on the next deploy.
 
-## High-level circuit APIs
+## Circuit API
 
-Pull resistors, decoupling helpers, LED indicators, and voltage dividers currently live under
-`circuitdk.experimental.patterns`. They create ordinary parts and connectivity without hidden
-semantic validation. Experimental APIs may change or be removed without deprecation, including in
-patch releases.
+### Basic circuit description
 
-See [High-level circuit APIs](../README.md#high-level-circuit-apis) for examples.
+Add parts and nets to a `Circuit`, then describe how their pins connect:
+
+```python
+from circuitdk import Circuit, Part, V, kohm
+from circuitdk.parts import Resistor
+
+circuit = Circuit("PowerLed")
+vcc = circuit.power("VCC", voltage=3.3 * V)
+gnd = circuit.ground()
+
+resistor = Resistor(circuit, "LedResistor", resistance=1 * kohm)
+led = Part(circuit, "Led", symbol="Device:LED")
+
+vcc.connect(resistor.pin1)
+circuit.connect(resistor.pin2, led.pin("A"))
+gnd.connect(led.pin("K"))
+```
+
+`Net.connect()` connects pins to a named net. `Circuit.connect()` connects the specified pins to
+the same anonymous net. Mark intentionally unused pins with `no_connect()` as described in
+[Explicit unused pins](#explicit-unused-pins).
+
+### High-level APIs
+
+Preview APIs provide shorter, role-oriented descriptions of common circuit structures:
+
+```python
+# Preview APIs for expressing circuit intent more directly.
+from circuitdk.experimental.patterns import VoltageDivider
+
+divider = VoltageDivider(
+    circuit,
+    "SupplySense",
+    input_net=vcc,
+    return_to=gnd,
+    upper_resistance=100 * kohm,
+    lower_resistance=33 * kohm,
+)
+```
+
+These preview APIs let you describe common circuit structures in terms of their roles. In the
+future, automatic validation based on declared circuit intent will help catch design mistakes that
+simple connectivity checks cannot reveal.
+
+They can be combined freely with the basic `Part`, `Net`, and `connect()` APIs. See
+[High-level circuit APIs](../README.md#high-level-circuit-apis) for more examples.
 
 ## Protocol-aware connections
 

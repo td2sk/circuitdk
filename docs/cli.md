@@ -9,7 +9,7 @@ Use `circuitdk --version` to print the installed CircuitDK version.
 
 | Command | Purpose |
 |---|---|
-| `circuitdk synth` | Build the deterministic desired Circuit IR without opening KiCad |
+| `circuitdk synth` | Load the Python circuit definition and show its generated parts and nets without opening KiCad |
 | `circuitdk diff` | Show symbol, property, and no-connect operations; exits 2 when changes exist |
 | `circuitdk deploy` | Atomically apply code-owned changes and report validation separately |
 | `circuitdk test` | Check managed state, net partitions, pin coverage, libraries, and ERC |
