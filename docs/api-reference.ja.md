@@ -324,18 +324,36 @@ supply = 3.3 * V
 ```
 
 結果はimmutableかつDecimalベースの`Quantity`です。`Part`と`CircuitIR`では数値として
-保持され、物理量による等価比較とtest向けの単位変換ができます。
+保持され、互換性のある次元同士で算術と比較を行えます。
 
 ```python
 from decimal import Decimal
 
+total = 1 * kohm + 500 * ohm
+assert total == 1.5 * kohm
+assert 1 * kohm <= total < 2 * kohm
+assert (10 * kohm) / 2 == 5 * kohm
+assert (10 * kohm) / (2 * kohm) == Decimal("5")
 assert resistance.in_unit(ohm) == Decimal("10000")
-assert resistance == 10000 * ohm
 ```
 
+加算、減算、大小比較では次元の一致が必要です。スカラーで割ると`Quantity`、同一次元の
+`Quantity`で割ると無次元の`Decimal`を返します。スカラー乗算、単項`+`と`-`、`abs()`も
+利用できます。
+
 KiCadへ書き込む境界では、一般的な受動部品の短縮表記へ変換します。たとえば`470R`、
-`4R7`、`3k3`、`100n`、`4u7`、`2m2`です。Pythonで選択した単位を維持するため、
-`0.3 * uF`は`0.3u`、`300 * nF`は`300n`になります。明示した文字列値は変更しません。
+`4R7`、`3k3`、`100n`、`4u7`、`2m2`です。Pythonで直接選択した単位は維持されるため、
+`0.3 * uF`は`0.3u`、`300 * nF`は`300n`になります。異なる倍率を混在させた計算では、
+operandの順序に依存しないengineering prefixを自動選択します。
+
+```python
+total = 1 * kohm + 500 * ohm  # KiCad value: "1k5"
+as_ohms = total.to(ohm)       # KiCad value: "1500R"
+as_kohms = total.to(kohm)     # KiCad value: "1k5"
+```
+
+`to(unit)`は指定倍率で表現した等価な`Quantity`を返します。`in_unit(unit)`は数値部分の
+`Decimal`だけを返します。明示した文字列値は変更しません。
 
 ## `KicadProject`
 

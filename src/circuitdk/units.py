@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from decimal import Decimal
-from typing import Self
+from typing import Self, overload
 
 _SCHEMATIC_PREFIXES: dict[tuple[str, Decimal], str] = {
     ("Ω", Decimal("1")): "R",
@@ -30,6 +30,18 @@ _HUMAN_SUFFIXES: dict[tuple[str, Decimal], str] = {
     ("H", Decimal("0.000000001")): "nH",
 }
 
+_AUTO_DISPLAY_SCALES: dict[str, tuple[Decimal, ...]] = {
+    "Ω": (Decimal("1000000"), Decimal("1000"), Decimal("1")),
+    "F": (Decimal("1"), Decimal("0.000001"), Decimal("0.000000001")),
+    "H": (
+        Decimal("1"),
+        Decimal("0.001"),
+        Decimal("0.000001"),
+        Decimal("0.000000001"),
+    ),
+    "V": (Decimal("1"),),
+}
+
 
 @dataclass(frozen=True, slots=True)
 class Unit:
@@ -48,11 +60,28 @@ class Unit:
 class Quantity:
     base_value: Decimal
     dimension: str
-    display_scale: Decimal = field(default=Decimal(1), compare=False, repr=False)
+    display_scale: Decimal | None = field(default=Decimal(1), compare=False, repr=False)
 
     def __str__(self) -> str:
-        suffix = _HUMAN_SUFFIXES.get((self.dimension, self.display_scale), self.dimension)
-        return f"{_decimal_text(self.base_value / self.display_scale)} {suffix}"
+        scale = self._effective_display_scale()
+        suffix = _HUMAN_SUFFIXES.get((self.dimension, scale), self.dimension)
+        return f"{_decimal_text(self.base_value / scale)} {suffix}"
+
+    def __add__(self, other: Quantity) -> Self:
+        self._require_same_dimension(other)
+        return type(self)(
+            self.base_value + other.base_value,
+            self.dimension,
+            display_scale=self._combined_display_scale(other),
+        )
+
+    def __sub__(self, other: Quantity) -> Self:
+        self._require_same_dimension(other)
+        return type(self)(
+            self.base_value - other.base_value,
+            self.dimension,
+            display_scale=self._combined_display_scale(other),
+        )
 
     def __mul__(self, factor: int | float | Decimal) -> Self:
         return type(self)(
@@ -64,24 +93,115 @@ class Quantity:
     def __rmul__(self, factor: int | float | Decimal) -> Self:
         return self * factor
 
+    @overload
+    def __truediv__(self, divisor: Quantity) -> Decimal: ...
+
+    @overload
+    def __truediv__(self, divisor: int | float | Decimal) -> Self: ...
+
+    def __truediv__(self, divisor: Quantity | int | float | Decimal) -> Self | Decimal:
+        if isinstance(divisor, Quantity):
+            self._require_same_dimension(divisor)
+            if divisor.base_value == 0:
+                raise ZeroDivisionError("cannot divide by a zero quantity")
+            return self.base_value / divisor.base_value
+        scalar = Decimal(str(divisor))
+        if scalar == 0:
+            raise ZeroDivisionError("cannot divide a quantity by zero")
+        return type(self)(
+            self.base_value / scalar,
+            self.dimension,
+            display_scale=self.display_scale,
+        )
+
+    def __pos__(self) -> Self:
+        return self
+
+    def __neg__(self) -> Self:
+        return type(self)(
+            -self.base_value,
+            self.dimension,
+            display_scale=self.display_scale,
+        )
+
+    def __abs__(self) -> Self:
+        return type(self)(
+            abs(self.base_value),
+            self.dimension,
+            display_scale=self.display_scale,
+        )
+
+    def __lt__(self, other: Quantity) -> bool:
+        self._require_same_dimension(other)
+        return self.base_value < other.base_value
+
+    def __le__(self, other: Quantity) -> bool:
+        self._require_same_dimension(other)
+        return self.base_value <= other.base_value
+
+    def __gt__(self, other: Quantity) -> bool:
+        self._require_same_dimension(other)
+        return self.base_value > other.base_value
+
+    def __ge__(self, other: Quantity) -> bool:
+        self._require_same_dimension(other)
+        return self.base_value >= other.base_value
+
+    def to(self, unit: Unit) -> Self:
+        """Return an equivalent quantity expressed using ``unit``."""
+        self._require_unit_dimension(unit)
+        return type(self)(
+            self.base_value,
+            self.dimension,
+            display_scale=unit.scale,
+        )
+
     def in_unit(self, unit: Unit) -> Decimal:
         """Return the numeric value expressed in ``unit``."""
+        self._require_unit_dimension(unit)
+        return self.base_value / unit.scale
+
+    def _effective_display_scale(self) -> Decimal:
+        if self.display_scale is not None:
+            return self.display_scale
+        scales = _AUTO_DISPLAY_SCALES.get(self.dimension, (Decimal(1),))
+        magnitude = abs(self.base_value)
+        if magnitude == 0:
+            return Decimal(1)
+        for scale in scales:
+            displayed = magnitude / scale
+            if Decimal(1) <= displayed < Decimal(1000):
+                return scale
+        return scales[-1] if magnitude < scales[-1] else scales[0]
+
+    def _combined_display_scale(self, other: Quantity) -> Decimal | None:
+        if self.display_scale == other.display_scale:
+            return self.display_scale
+        return None
+
+    def _require_same_dimension(self, other: Quantity) -> None:
+        if not isinstance(other, Quantity):
+            raise TypeError(f"expected Quantity, got {type(other).__name__}")
+        if self.dimension != other.dimension:
+            raise ValueError(f"incompatible dimensions: {self.dimension} and {other.dimension}")
+
+    def _require_unit_dimension(self, unit: Unit) -> None:
         if unit.symbol != self.dimension:
             raise ValueError(f"cannot convert {self.dimension} to {unit.symbol}")
-        return self.base_value / unit.scale
 
 
 def format_schematic_value(value: str | Quantity) -> str:
     """Format a code-owned value for a KiCad schematic property."""
     if isinstance(value, str):
         return value
-    marker = _SCHEMATIC_PREFIXES.get((value.dimension, value.display_scale))
+    scale = value._effective_display_scale()
+    marker = _SCHEMATIC_PREFIXES.get((value.dimension, scale))
     if marker is None:
         return str(value)
-    number = _decimal_text(value.base_value / value.display_scale)
+    number = _decimal_text(value.base_value / scale)
     if value.dimension == "Ω" and marker == "R":
         return _replace_decimal(number, marker, omit_leading_zero=True)
-    if "." in number and abs(value.base_value / value.display_scale) >= 1 and marker:
+    if "." in number and abs(value.base_value / scale) >= 1 and marker:
         return _replace_decimal(number, marker)
     return f"{number}{marker}"
 

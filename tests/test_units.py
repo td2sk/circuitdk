@@ -57,6 +57,63 @@ def test_quantity_supports_scalar_multiplication_from_either_side() -> None:
     assert format_schematic_value(2 * resistance) == "96k"
 
 
+def test_quantity_supports_arithmetic_and_comparison() -> None:
+    total = 1 * kohm + 500 * ohm
+    difference = 1 * kohm - 1.5 * kohm
+
+    assert total == 1.5 * kohm
+    assert format_schematic_value(total) == "1k5"
+    assert format_schematic_value(500 * ohm + 1 * kohm) == "1k5"
+    assert format_schematic_value(500 * ohm + 500 * ohm) == "1000R"
+    assert difference == -500 * ohm
+    assert +difference is difference
+    assert -difference == 500 * ohm
+    assert abs(difference) == 500 * ohm
+    assert 999 * ohm < 1 * kohm
+    assert 1 * kohm <= 1000 * ohm
+    assert 1.1 * kohm > 1000 * ohm
+    assert 1 * kohm >= 1000 * ohm
+
+
+def test_quantity_supports_scalar_and_same_dimension_division() -> None:
+    resistance = 10 * kohm
+
+    assert resistance / 2 == 5 * kohm
+    assert resistance / (2 * kohm) == Decimal("5")
+
+    with pytest.raises(ZeroDivisionError):
+        _ = resistance / 0
+    with pytest.raises(ZeroDivisionError):
+        _ = resistance / (0 * ohm)
+
+
+def test_mixed_scales_use_automatic_display_prefix() -> None:
+    resistance = 1 * kohm + 500 * ohm
+    capacitance = 0.3 * uF + 100 * nF
+
+    assert format_schematic_value(resistance) == "1k5"
+    assert format_schematic_value(capacitance) == "400n"
+    assert format_schematic_value(resistance.to(ohm)) == "1500R"
+    assert format_schematic_value(resistance.to(kohm)) == "1k5"
+    assert resistance.to(kohm).in_unit(kohm) == Decimal("1.5")
+
+
+def test_quantity_rejects_arithmetic_across_dimensions() -> None:
+    resistance = 1 * kohm
+    capacitance = 1 * uF
+
+    with pytest.raises(ValueError, match="incompatible dimensions"):
+        _ = resistance + capacitance
+    with pytest.raises(ValueError, match="incompatible dimensions"):
+        _ = resistance - capacitance
+    with pytest.raises(ValueError, match="incompatible dimensions"):
+        _ = resistance / capacitance
+    with pytest.raises(ValueError, match="incompatible dimensions"):
+        _ = resistance < capacitance
+    with pytest.raises(ValueError, match="cannot convert"):
+        resistance.to(uF)
+
+
 def test_passive_patterns_expose_typed_values() -> None:
     circuit = Circuit("Passives")
     resistor = Resistor(circuit, "R", resistance=4.7 * kohm)

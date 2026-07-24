@@ -325,20 +325,37 @@ inductance = 2.2 * mH
 supply = 3.3 * V
 ```
 
-The result is an immutable, Decimal-based `Quantity`. It remains numeric in `Part` and `CircuitIR`,
-supports equality by physical value, and can be converted for assertions:
+The result is an immutable, Decimal-based `Quantity`. It remains numeric in `Part` and `CircuitIR`
+and supports arithmetic and comparisons between compatible dimensions:
 
 ```python
 from decimal import Decimal
 
+total = 1 * kohm + 500 * ohm
+assert total == 1.5 * kohm
+assert 1 * kohm <= total < 2 * kohm
+assert (10 * kohm) / 2 == 5 * kohm
+assert (10 * kohm) / (2 * kohm) == Decimal("5")
 assert resistance.in_unit(ohm) == Decimal("10000")
-assert resistance == 10000 * ohm
 ```
 
+Addition, subtraction, and ordering require matching dimensions. Dividing by a scalar returns a
+`Quantity`; dividing by another `Quantity` of the same dimension returns a dimensionless
+`Decimal`. Scalar multiplication, unary `+` and `-`, and `abs()` are also supported.
+
 At the KiCad boundary, CircuitDK uses conventional compact passive notation. Examples include
-`470R`, `4R7`, `3k3`, `100n`, `4u7`, and `2m2`. The unit selected in Python is retained, so
-`0.3 * uF` becomes `0.3u`, while `300 * nF` becomes `300n`. Explicit string values are not
-rewritten.
+`470R`, `4R7`, `3k3`, `100n`, `4u7`, and `2m2`. A unit selected directly in Python is retained, so
+`0.3 * uF` becomes `0.3u`, while `300 * nF` becomes `300n`. Arithmetic that mixes scales selects a
+deterministic engineering prefix, independent of operand order:
+
+```python
+total = 1 * kohm + 500 * ohm  # KiCad value: "1k5"
+as_ohms = total.to(ohm)       # KiCad value: "1500R"
+as_kohms = total.to(kohm)     # KiCad value: "1k5"
+```
+
+`to(unit)` returns an equivalent `Quantity` expressed with the requested scale. `in_unit(unit)`
+returns only its numeric `Decimal` value. Explicit string values are not rewritten.
 
 ## `KicadProject`
 
