@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from decimal import Decimal
 from typing import Self, overload
 
-_ENGINEERING_PREFIXES: tuple[tuple[Decimal, str, str], ...] = (
+_SI_PREFIXES: tuple[tuple[Decimal, str, str], ...] = (
     (Decimal("1e12"), "T", "T"),
     (Decimal("1e9"), "G", "G"),
     (Decimal("1e6"), "M", "M"),
@@ -19,9 +19,9 @@ _ENGINEERING_PREFIXES: tuple[tuple[Decimal, str, str], ...] = (
 
 _PREFIX_BY_SCALE = {
     scale: (schematic_prefix, human_prefix)
-    for scale, schematic_prefix, human_prefix in _ENGINEERING_PREFIXES
+    for scale, schematic_prefix, human_prefix in _SI_PREFIXES
 }
-_ENGINEERING_SCALES = tuple(scale for scale, _, _ in _ENGINEERING_PREFIXES)
+_SI_SCALES = tuple(scale for scale, _, _ in _SI_PREFIXES)
 
 
 @dataclass(frozen=True, slots=True)
@@ -150,15 +150,11 @@ class Quantity:
         magnitude = abs(self.base_value)
         if magnitude == 0:
             return Decimal(1)
-        for scale in _ENGINEERING_SCALES:
+        for scale in _SI_SCALES:
             displayed = magnitude / scale
             if Decimal(1) <= displayed < Decimal(1000):
                 return scale
-        return (
-            _ENGINEERING_SCALES[-1]
-            if magnitude < _ENGINEERING_SCALES[-1]
-            else _ENGINEERING_SCALES[0]
-        )
+        return _SI_SCALES[-1] if magnitude < _SI_SCALES[-1] else _SI_SCALES[0]
 
     def _combined_display_scale(self, other: Quantity) -> Decimal | None:
         if self.display_scale == other.display_scale:

@@ -203,7 +203,7 @@ def test_extended_units_have_consistent_human_and_schematic_display(
         (1 * fF + 0 * F, "1f"),
     ),
 )
-def test_automatic_display_uses_common_engineering_prefixes(
+def test_automatic_display_uses_common_si_prefixes(
     quantity,
     schematic: str,  # type: ignore[no-untyped-def]
 ) -> None:

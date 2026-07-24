@@ -314,7 +314,7 @@ sck=pin_override(
 
 ## 値と単位
 
-実用的な範囲のUnit定数を公開しています。
+次のUnit定数を使用できます。
 
 - 抵抗：`ohm`、`kohm`、`Mohm`
 - 静電容量：`F`、`mF`、`uF`、`nF`、`pF`、`fF`
@@ -351,8 +351,8 @@ assert resistance.in_unit(ohm) == Decimal("10000")
 
 KiCadへ書き込む境界では、一般的な受動部品の短縮表記へ変換します。たとえば`470R`、
 `4R7`、`3k3`、`100n`、`4u7`、`2m2`です。Pythonで直接選択した単位は維持されるため、
-`0.3 * uF`は`0.3u`、`300 * nF`は`300n`になります。異なる倍率を混在させた計算では、
-operandの順序に依存しないengineering prefixを自動選択します。
+`0.3 * uF`は`0.3u`、`300 * nF`は`300n`になります。異なる倍率を含む計算結果は、
+operandの順序にかかわらず同じ読みやすいSI prefixで表示されます。
 
 ```python
 total = 1 * kohm + 500 * ohm  # KiCad value: "1k5"
@@ -363,10 +363,9 @@ as_kohms = total.to(kohm)     # KiCad value: "1k5"
 `to(unit)`は指定倍率で表現した等価な`Quantity`を返します。`in_unit(unit)`は数値部分の
 `Decimal`だけを返します。明示した文字列値は変更しません。
 
-自動表示では、すべての次元で共通のengineering prefix範囲である`T`、`G`、`M`、`k`、
-base、`m`、`u`、`n`、`p`、`f`を使用します。公開定数は上記の実用範囲に限定しています。
-周波数は`16MHz`のようにKiCad向け短縮表記でも`Hz`を維持し、電圧と電流は人間向けの単位を
-維持します。
+異なる倍率を含む計算結果には、`T`から`f`までのSI prefixから読みやすい表記を自動選択
+します。上記の定数にない倍率も、`Unit`を使って明示できます。周波数は`16MHz`、電圧や
+電流は`250 µV`、`3 mA`のように、それぞれの単位が分かる形で表示されます。
 
 ## `KicadProject`
 

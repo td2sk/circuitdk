@@ -316,7 +316,7 @@ sck=pin_override(
 
 ## Values and units
 
-Public unit constants cover these practical ranges:
+Use the following unit constants:
 
 - Resistance: `ohm`, `kohm`, `Mohm`
 - Capacitance: `F`, `mF`, `uF`, `nF`, `pF`, `fF`
@@ -353,8 +353,8 @@ Addition, subtraction, and ordering require matching dimensions. Dividing by a s
 
 At the KiCad boundary, CircuitDK uses conventional compact passive notation. Examples include
 `470R`, `4R7`, `3k3`, `100n`, `4u7`, and `2m2`. A unit selected directly in Python is retained, so
-`0.3 * uF` becomes `0.3u`, while `300 * nF` becomes `300n`. Arithmetic that mixes scales selects a
-deterministic engineering prefix, independent of operand order:
+`0.3 * uF` becomes `0.3u`, while `300 * nF` becomes `300n`. Results calculated from different
+scales use the same readable SI prefix regardless of operand order:
 
 ```python
 total = 1 * kohm + 500 * ohm  # KiCad value: "1k5"
@@ -365,10 +365,10 @@ as_kohms = total.to(kohm)     # KiCad value: "1k5"
 `to(unit)` returns an equivalent `Quantity` expressed with the requested scale. `in_unit(unit)`
 returns only its numeric `Decimal` value. Explicit string values are not rewritten.
 
-Automatic display uses one common engineering-prefix range for every dimension: `T`, `G`, `M`,
-`k`, base, `m`, `u`, `n`, `p`, and `f`. Public constants intentionally cover only the ranges
-listed above. Frequency values retain `Hz` in compact KiCad output, such as `16MHz`; voltage and
-current retain their human-readable units.
+Results calculated from different scales automatically select a readable SI prefix from `T`
+through `f`. Scales without a predefined constant can still be specified with `Unit`. Frequencies
+are displayed as `16MHz`, while voltage and current retain readable units such as `250 µV` and
+`3 mA`.
 
 ## `KicadProject`
 
