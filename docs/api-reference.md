@@ -316,13 +316,21 @@ sck=pin_override(
 
 ## Values and units
 
-Available units are `ohm`, `kohm`, `Mohm`, `F`, `uF`, `nF`, `H`, `mH`, `uH`, `nH`, and `V`:
+Public unit constants cover these practical ranges:
+
+- Resistance: `ohm`, `kohm`, `Mohm`
+- Capacitance: `F`, `mF`, `uF`, `nF`, `pF`, `fF`
+- Inductance: `H`, `mH`, `uH`, `nH`, `pH`
+- Voltage: `kV`, `V`, `mV`, `uV`, `nV`
+- Current: `kA`, `A`, `mA`, `uA`, `nA`, `pA`, `fA`
+- Frequency: `Hz`, `kHz`, `MHz`, `GHz`, `THz`
 
 ```python
 resistance = 10 * kohm
 capacitance = 100 * nF
 inductance = 2.2 * mH
 supply = 3.3 * V
+clock = 16 * MHz
 ```
 
 The result is an immutable, Decimal-based `Quantity`. It remains numeric in `Part` and `CircuitIR`
@@ -356,6 +364,11 @@ as_kohms = total.to(kohm)     # KiCad value: "1k5"
 
 `to(unit)` returns an equivalent `Quantity` expressed with the requested scale. `in_unit(unit)`
 returns only its numeric `Decimal` value. Explicit string values are not rewritten.
+
+Automatic display uses one common engineering-prefix range for every dimension: `T`, `G`, `M`,
+`k`, base, `m`, `u`, `n`, `p`, and `f`. Public constants intentionally cover only the ranges
+listed above. Frequency values retain `Hz` in compact KiCad output, such as `16MHz`; voltage and
+current retain their human-readable units.
 
 ## `KicadProject`
 

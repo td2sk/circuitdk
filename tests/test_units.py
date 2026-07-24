@@ -4,7 +4,40 @@ from decimal import Decimal
 
 import pytest
 
-from circuitdk import Circuit, F, H, Mohm, kohm, mH, nF, nH, ohm, uF, uH
+from circuitdk import (
+    A,
+    Circuit,
+    F,
+    GHz,
+    H,
+    Hz,
+    MHz,
+    Mohm,
+    THz,
+    V,
+    fA,
+    fF,
+    kA,
+    kHz,
+    kohm,
+    kV,
+    mA,
+    mF,
+    mH,
+    mV,
+    nA,
+    nF,
+    nH,
+    nV,
+    ohm,
+    pA,
+    pF,
+    pH,
+    uA,
+    uF,
+    uH,
+    uV,
+)
 from circuitdk.parts import Capacitor, Inductor, Resistor
 from circuitdk.units import format_schematic_value
 
@@ -96,6 +129,85 @@ def test_mixed_scales_use_automatic_display_prefix() -> None:
     assert format_schematic_value(resistance.to(ohm)) == "1500R"
     assert format_schematic_value(resistance.to(kohm)) == "1k5"
     assert resistance.to(kohm).in_unit(kohm) == Decimal("1.5")
+
+
+@pytest.mark.parametrize(
+    ("unit", "dimension", "scale"),
+    (
+        (ohm, "Ω", "1"),
+        (kohm, "Ω", "1e3"),
+        (Mohm, "Ω", "1e6"),
+        (F, "F", "1"),
+        (mF, "F", "1e-3"),
+        (uF, "F", "1e-6"),
+        (nF, "F", "1e-9"),
+        (pF, "F", "1e-12"),
+        (fF, "F", "1e-15"),
+        (H, "H", "1"),
+        (mH, "H", "1e-3"),
+        (uH, "H", "1e-6"),
+        (nH, "H", "1e-9"),
+        (pH, "H", "1e-12"),
+        (kV, "V", "1e3"),
+        (V, "V", "1"),
+        (mV, "V", "1e-3"),
+        (uV, "V", "1e-6"),
+        (nV, "V", "1e-9"),
+        (kA, "A", "1e3"),
+        (A, "A", "1"),
+        (mA, "A", "1e-3"),
+        (uA, "A", "1e-6"),
+        (nA, "A", "1e-9"),
+        (pA, "A", "1e-12"),
+        (fA, "A", "1e-15"),
+        (Hz, "Hz", "1"),
+        (kHz, "Hz", "1e3"),
+        (MHz, "Hz", "1e6"),
+        (GHz, "Hz", "1e9"),
+        (THz, "Hz", "1e12"),
+    ),
+)
+def test_public_unit_constants(unit, dimension: str, scale: str) -> None:  # type: ignore[no-untyped-def]
+    assert unit.symbol == dimension
+    assert unit.scale == Decimal(scale)
+
+
+@pytest.mark.parametrize(
+    ("quantity", "human", "schematic"),
+    (
+        (1 * fF, "1 fF", "1f"),
+        (1 * pH, "1 pH", "1p"),
+        (250 * uV, "250 µV", "250 µV"),
+        (3 * mA, "3 mA", "3 mA"),
+        (16 * MHz, "16 MHz", "16MHz"),
+        (1.5 * GHz, "1.5 GHz", "1.5GHz"),
+        (1 * THz, "1 THz", "1THz"),
+    ),
+)
+def test_extended_units_have_consistent_human_and_schematic_display(
+    quantity,
+    human: str,
+    schematic: str,  # type: ignore[no-untyped-def]
+) -> None:
+    assert str(quantity) == human
+    assert format_schematic_value(quantity) == schematic
+
+
+@pytest.mark.parametrize(
+    ("quantity", "schematic"),
+    (
+        (1 * THz + 0 * Hz, "1THz"),
+        (1 * GHz + 0 * Hz, "1GHz"),
+        (1 * MHz + 0 * Hz, "1MHz"),
+        (1 * kHz + 0 * Hz, "1kHz"),
+        (1 * fF + 0 * F, "1f"),
+    ),
+)
+def test_automatic_display_uses_common_engineering_prefixes(
+    quantity,
+    schematic: str,  # type: ignore[no-untyped-def]
+) -> None:
+    assert format_schematic_value(quantity) == schematic
 
 
 def test_quantity_rejects_arithmetic_across_dimensions() -> None:

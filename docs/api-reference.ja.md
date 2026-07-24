@@ -314,13 +314,21 @@ sck=pin_override(
 
 ## 値と単位
 
-`ohm`、`kohm`、`Mohm`、`F`、`uF`、`nF`、`H`、`mH`、`uH`、`nH`、`V`を使用できます。
+実用的な範囲のUnit定数を公開しています。
+
+- 抵抗：`ohm`、`kohm`、`Mohm`
+- 静電容量：`F`、`mF`、`uF`、`nF`、`pF`、`fF`
+- インダクタンス：`H`、`mH`、`uH`、`nH`、`pH`
+- 電圧：`kV`、`V`、`mV`、`uV`、`nV`
+- 電流：`kA`、`A`、`mA`、`uA`、`nA`、`pA`、`fA`
+- 周波数：`Hz`、`kHz`、`MHz`、`GHz`、`THz`
 
 ```python
 resistance = 10 * kohm
 capacitance = 100 * nF
 inductance = 2.2 * mH
 supply = 3.3 * V
+clock = 16 * MHz
 ```
 
 結果はimmutableかつDecimalベースの`Quantity`です。`Part`と`CircuitIR`では数値として
@@ -354,6 +362,11 @@ as_kohms = total.to(kohm)     # KiCad value: "1k5"
 
 `to(unit)`は指定倍率で表現した等価な`Quantity`を返します。`in_unit(unit)`は数値部分の
 `Decimal`だけを返します。明示した文字列値は変更しません。
+
+自動表示では、すべての次元で共通のengineering prefix範囲である`T`、`G`、`M`、`k`、
+base、`m`、`u`、`n`、`p`、`f`を使用します。公開定数は上記の実用範囲に限定しています。
+周波数は`16MHz`のようにKiCad向け短縮表記でも`Hz`を維持し、電圧と電流は人間向けの単位を
+維持します。
 
 ## `KicadProject`
 
