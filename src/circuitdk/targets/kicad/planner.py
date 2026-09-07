@@ -519,7 +519,8 @@ def _pin_position(
         180: (-local_x, -local_y),
         270: (local_y, -local_x),
     }.get(rotation, (local_x, local_y))
-    return x + dx, y + dy
+    # Library coordinates point up; schematic coordinates point down.
+    return x + dx, y - dy
 
 
 def _coordinate_key(x: float, y: float) -> tuple[float, float]:

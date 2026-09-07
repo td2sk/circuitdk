@@ -57,6 +57,25 @@ def test_real_kicad_10_accepts_deploy_and_passes_erc(tmp_path: Path) -> None:
 
 
 @pytest.mark.kicad
+def test_asymmetric_connector_no_connects_match_kicad_pin_positions(tmp_path: Path) -> None:
+    cli = KicadCli.discover()
+    if cli is None or not cli.version().startswith("10."):
+        pytest.skip("KiCad 10 CLI is not installed")
+    schematic = tmp_path / "connector.kicad_sch"
+    shutil.copy2(Path(__file__).parent / "fixtures/kicad10/empty.kicad_sch", schematic)
+    circuit = Circuit("Connector")
+    connector = Part(circuit, "J", symbol="Connector_Generic:Conn_01x02")
+    connector.pin("1").no_connect()
+    connector.pin("2").no_connect()
+    project = KicadProject(circuit, schematic, state_directory=tmp_path / "state")
+
+    deployed = project.deploy()
+
+    assert deployed.erc is not None and deployed.erc.ok
+    assert not project.plan().has_changes
+
+
+@pytest.mark.kicad
 def test_real_kicad_netlist_reports_manual_wiring_pending(tmp_path: Path) -> None:
     cli = KicadCli.discover()
     if cli is None or not cli.version().startswith("10."):
