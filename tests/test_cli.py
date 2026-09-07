@@ -7,7 +7,7 @@ import pytest
 from typer.testing import CliRunner
 
 import circuitdk.cli as cli_module
-from circuitdk.project import DeployResult
+from circuitdk.project import DeployResult, Drift
 from circuitdk.targets.kicad import ErcResult, ErcViolation
 from circuitdk.targets.kicad.planner import Action, DeploymentPlan, FieldChange
 
@@ -188,3 +188,30 @@ def test_deploy_electrical_error_is_distinct_from_apply_failure(
     assert "APPLY SUCCEEDED" in result.stdout
     assert "ELECTRICAL VALIDATION FAILED" in result.stdout
     assert "INVALID — Deployment was applied" in result.stdout
+
+
+@pytest.mark.parametrize("command", ["diff", "drift"])
+@pytest.mark.parametrize("as_json", [False, True])
+@pytest.mark.parametrize("changed", [False, True])
+def test_change_exit_codes_are_independent_of_output_format(
+    monkeypatch: pytest.MonkeyPatch,
+    command: str,
+    as_json: bool,
+    changed: bool,
+) -> None:
+    class Project:
+        def plan(self) -> DeploymentPlan:
+            return DeploymentPlan((Action("create", "/Board/R"),) if changed else ())
+
+        def drift(self) -> tuple[Drift, ...]:
+            return (Drift("/Board/R", "value", "1k", "2k"),) if changed else ()
+
+    monkeypatch.setattr(cli_module, "load_project", lambda _: Project())
+    result = CliRunner().invoke(app, [command, *(["--json"] if as_json else [])])
+    assert result.exit_code == (2 if changed else 0)
+    if as_json:
+        payload = json.loads(result.stdout)
+        if command == "diff":
+            assert payload["has_changes"] is changed
+        else:
+            assert bool(payload) is changed

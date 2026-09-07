@@ -129,6 +129,7 @@ def diff_command(
             f"{counts['delete']} delete.",
             color=CYAN,
         )
+    if plan.has_changes:
         raise typer.Exit(2)
 
 
@@ -146,6 +147,7 @@ def drift(config: ConfigOption = Path("circuitdk.toml"), json_output: JsonOption
             typer.echo(
                 f"! {change.circuit_id} {change.field}: {change.applied!r} -> {change.actual!r}"
             )
+    if changes:
         raise typer.Exit(2)
 
 
