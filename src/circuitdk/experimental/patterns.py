@@ -59,7 +59,7 @@ class LedIndicator(Construct):
             "Led",
             symbol="Device:LED",
             footprint=led_footprint,
-            pins={"A": "1", "K": "2"},
+            pins={"K": "1", "A": "2"},
         )
         self.circuit.connect(drive, self.resistor.pin1)
         self.circuit.connect(self.resistor.pin2, self.led.pin("A"))

@@ -140,6 +140,21 @@ def test_voltage_divider_and_spi_create_connectivity() -> None:
     assert sum(len(net.pins) == 2 for net in ir.nets) >= 4
 
 
+def test_led_indicator_connects_resistor_to_anode_and_ground_to_cathode() -> None:
+    circuit = Circuit("Led")
+    source = Part(circuit, "Source", symbol="Test:Source", pins={"OUT": "1"})
+    indicator = LedIndicator(
+        circuit,
+        "Status",
+        drive=source.pin("OUT"),
+        return_to=circuit.ground(),
+        series_resistance=1 * kohm,
+    )
+    nets = {net.id: {pin.key for pin in net.pins} for net in circuit.synth().nets}
+    assert nets["/Led/GND"] == {f"{indicator.led.path}:1"}
+    assert {f"{indicator.resistor.path}:2", f"{indicator.led.path}:2"} in nets.values()
+
+
 def test_pin_cannot_be_connected_and_no_connect() -> None:
     circuit = Circuit("InvalidNoConnect")
     part = Part(circuit, "P", symbol="Test:P", pins={"1": "1", "2": "2"})
