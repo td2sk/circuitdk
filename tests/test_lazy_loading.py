@@ -116,3 +116,67 @@ def test_explicit_pins_and_pin_overrides_are_mutually_exclusive() -> None:
             pins={"IN": "1"},
             pin_overrides={"INPUT": "1"},
         )
+
+
+@pytest.fixture
+def alias_project(tmp_path: Path) -> KicadProject:
+    definition = SymbolDefinition(
+        "Test:P",
+        tmp_path / "Test.kicad_sym",
+        "test",
+        "",
+        (
+            SymbolPinDefinition("1", "VCC", "passive", 1, 0, 0, 0),
+            SymbolPinDefinition("2", "OUT", "passive", 1, 0, 0, 0),
+        ),
+        "U",
+    )
+    circuit = Circuit("Aliases")
+    Part(circuit, "P", symbol="Test:P", pin_overrides={"VDD": "1"})
+    return KicadProject(
+        circuit,
+        tmp_path / "missing.kicad_sch",
+        symbol_resolver=_StaticSymbolResolver(definition),
+        validate_with_kicad=False,
+    )
+
+
+@pytest.mark.parametrize("selector", ["1", "VCC"])
+def test_resolved_alias_short_is_rejected(alias_project: KicadProject, selector: str) -> None:
+    circuit = alias_project.circuit
+    part = circuit._parts[0]
+    circuit.power("VDD").connect(part.pin("VDD"))
+    circuit.ground().connect(part.pin(selector))
+    with pytest.raises(ValueError, match="shorted"):
+        alias_project.synth()
+
+
+def test_resolved_alias_no_connect_conflict_is_rejected(alias_project: KicadProject) -> None:
+    circuit = alias_project.circuit
+    part = circuit._parts[0]
+    circuit.power("VDD").connect(part.pin("VDD"))
+    part.pin("VCC").no_connect()
+    with pytest.raises(ValueError, match="both connected and no-connect"):
+        alias_project.synth()
+
+
+def test_resolved_alias_connections_merge_and_preserve_override(
+    alias_project: KicadProject,
+) -> None:
+    circuit = alias_project.circuit
+    part = circuit._parts[0]
+    circuit.power("VDD").connect(part.pin("VDD"))
+    circuit.connect(part.pin("VCC"), part.pin("2"))
+    desired = alias_project.synth()
+    assert len(desired.nets) == 1
+    assert desired.nets[0].id == "/Aliases/VDD"
+    assert {pin.number for pin in desired.nets[0].pins} == {"1", "2"}
+    assert desired.parts[0].pin("VDD").number == "1"
+
+
+def test_resolved_alias_no_connects_are_deduplicated(alias_project: KicadProject) -> None:
+    part = alias_project.circuit._parts[0]
+    part.pin("VDD").no_connect()
+    part.pin("VCC").no_connect()
+    desired = alias_project.synth()
+    assert desired.no_connects == (desired.parts[0].pin("VDD"),)

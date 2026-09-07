@@ -10,7 +10,7 @@ from typing import Any
 from lossless_sexpr import TextEdit, apply_edits, parse
 
 from .conformance import ConformanceResult, compare_connectivity
-from .constructs import Circuit
+from .constructs import Circuit, _anonymous_net_name, _merge_overlapping
 from .ir import CircuitIR, NetIR, PartIR, PinRef
 from .lock import CircuitLock, LockedLibrary
 from .rules import PinCoverageResult, validate_pin_coverage
@@ -395,36 +395,35 @@ def _sha256(source: str) -> str:
 
 
 def _resolve_library_pins(circuit: CircuitIR, resolver: SymbolResolver) -> CircuitIR:
-    replacements: dict[str, PinRef] = {}
+    replacements: dict[PinRef, PinRef] = {}
     parts: list[PartIR] = []
     for part in circuit.parts:
         if not part.resolve_pins:
             parts.append(part)
             continue
         definition = resolver.resolve(part.symbol)
-        pins = [
-            PinRef(part.id, pin.number, pin.name or pin.number)
+        pins = {
+            pin.number: PinRef(part.id, pin.number, pin.name or pin.number)
             for pin in definition.pins
             if pin.unit == 1
-        ]
+        }
+        resolved_numbers: dict[PinRef, str] = {}
         for pin in part.pins:
             overridden = pin.name != pin.number
             resolved = definition.pin(pin.number if overridden else pin.name)
-            replacement = PinRef(
-                part.id,
-                resolved.number,
-                pin.name if overridden else resolved.name or pin.name,
-            )
-            replacements[pin.key] = replacement
-            pins = [item for item in pins if item.number != replacement.number]
-            pins.append(replacement)
+            resolved_numbers[pin] = resolved.number
+            if overridden or resolved.number not in pins:
+                pins[resolved.number] = PinRef(
+                    part.id, resolved.number, pin.name if overridden else resolved.name or pin.name
+                )
+        replacements.update((pin, pins[number]) for pin, number in resolved_numbers.items())
         parts.append(
             PartIR(
                 part.id,
                 part.symbol,
                 part.value,
                 part.footprint,
-                tuple(sorted(pins)),
+                tuple(sorted(pins.values())),
                 part.in_bom,
                 part.on_board,
                 part.dnp,
@@ -433,13 +432,33 @@ def _resolve_library_pins(circuit: CircuitIR, resolver: SymbolResolver) -> Circu
         )
 
     def replace(pin: PinRef) -> PinRef:
-        return replacements.get(pin.key, pin)
+        return replacements.get(pin, pin)
 
-    nets = tuple(
-        NetIR(net.id, tuple(sorted(replace(pin) for pin in net.pins)), net.kind, net.voltage)
+    # Aliases can reveal overlaps only after library resolution. Reuse the
+    # construct-level merge rules with canonical physical pins.
+    merged = _merge_overlapping(
+        (
+            None if net.id.startswith("/__anonymous__/") else net.id,
+            net.kind,
+            net.voltage,
+            {replace(pin) for pin in net.pins},
+        )
         for net in circuit.nets
     )
-    no_connects = tuple(sorted(replace(pin) for pin in circuit.no_connects))
+    nets = tuple(
+        sorted(
+            (
+                NetIR(name or _anonymous_net_name(pins), tuple(sorted(pins)), kind, voltage)
+                for name, kind, voltage, pins in merged
+            ),
+            key=lambda net: net.id,
+        )
+    )
+    no_connects = tuple(sorted({replace(pin) for pin in circuit.no_connects}))
+    connected = {pin.key for net in nets for pin in net.pins}
+    conflicting = sorted(pin.key for pin in no_connects if pin.key in connected)
+    if conflicting:
+        raise ValueError(f"pins are both connected and no-connect: {conflicting}")
     return CircuitIR(
         circuit.id,
         tuple(parts),
