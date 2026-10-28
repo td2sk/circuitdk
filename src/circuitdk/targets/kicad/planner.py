@@ -508,10 +508,6 @@ def _pin_position(
     mirror: str | None = None,
 ) -> tuple[float, float]:
     x, y, angle = symbol_position
-    if mirror == "x":
-        local_y = -local_y
-    elif mirror == "y":
-        local_x = -local_x
     rotation = round(angle) % 360
     dx, dy = {
         0: (local_x, local_y),
@@ -519,6 +515,11 @@ def _pin_position(
         180: (-local_x, -local_y),
         270: (local_y, -local_x),
     }.get(rotation, (local_x, local_y))
+    # KiCad mirrors along schematic axes, after rotating the symbol.
+    if mirror == "x":
+        dy = -dy
+    elif mirror == "y":
+        dx = -dx
     # Library coordinates point up; schematic coordinates point down.
     return x + dx, y - dy
 
